@@ -1,0 +1,11 @@
+-- INIT 
+CREATE TABLE db_test (
+  msg VARCHAR(255) NOT NULL,
+  PRIMARY KEY (msg)
+)
+
+-- INSERT_TEST_DATA
+INSERT INTO db_test(msg) VALUES (:msg)
+
+-- SELECT_TEST_DATA
+SELECT msg FROM db_test

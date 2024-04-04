@@ -2,10 +2,9 @@ module github.com/stregato/mio/cli
 
 go 1.21.3
 
-replace github.com/stregato/mio/lib => ../lib
+require github.com/stregato/mio/lib v0.0.0
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.25.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.1 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.18.45 // indirect
@@ -29,16 +28,11 @@ require (
 	github.com/ecies/go/v2 v2.0.9 // indirect
 	github.com/ethereum/go-ethereum v1.13.5 // indirect
 	github.com/godruoyi/go-snowflake v0.0.2 // indirect
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
-	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/sftp v1.13.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stregato/mio/lib v0.0.0-00010101000000-000000000000 // indirect
 	github.com/studio-b12/gowebdav v0.9.0 // indirect
 	github.com/uhthomas/seekctr v0.0.0-20211121195710-e18b12545023 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
@@ -47,7 +41,7 @@ require (
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/stregato/mio/lib => ../lib

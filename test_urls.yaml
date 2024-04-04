@@ -1,0 +1,3 @@
+---
+mem: mem://0/praha
+local: file:///tmp/test_owndata

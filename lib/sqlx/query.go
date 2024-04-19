@@ -27,10 +27,15 @@ func convert(m Args) ([]any, error) {
 		case string, []byte, int, int8, int16, int32, int64, uint16, uint32, uint64, uint8, float32, float64, bool:
 			c = v
 		default:
-			var err error
-			c, err = msgpack.Marshal(v)
-			if core.IsErr(err, "cannot marshal attribute %s=%v: %v", k, v, err) {
-				return nil, err
+			kind := reflect.TypeOf(v).Kind()
+			if kind == reflect.Struct || kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map {
+				var err error
+				c, err = msgpack.Marshal(v)
+				if core.IsErr(err, "cannot marshal attribute %s=%v: %v", k, v, err) {
+					return nil, err
+				}
+			} else {
+				c = v
 			}
 		}
 		args = append(args, s.Named(k, c))
@@ -159,7 +164,7 @@ func (rw *Rows) Scan(dest ...interface{}) (err error) {
 
 	for i, col := range columnTypes {
 		switch col.DatabaseTypeName() {
-		case "INT": // Assuming the column is a Unix timestamp stored as INT
+		case "INTEGER", "INT": // Assuming the column is a Unix timestamp stored as INT
 			if t, ok := dest[i].(*time.Time); ok {
 				var timestamp int64
 				dest[i] = &timestamp
@@ -170,18 +175,21 @@ func (rw *Rows) Scan(dest ...interface{}) (err error) {
 
 		case "BLOB", "TEXT":
 			if _, ok := dest[i].(*string); !ok {
-				var data []byte
-				var originalDest = dest[i]
-				dest[i] = &data
-				defer func(index int, originalDest any) {
-					if len(data) > 0 {
-						err = msgpack.Unmarshal(data, originalDest)
-						if err != nil {
-							n := reflect.TypeOf(originalDest)
-							core.IsErr(err, "cannot convert binary to type %v: %v", n, err)
+				var kind = reflect.TypeOf(dest[i]).Elem().Kind()
+				if kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct {
+					var data []byte
+					var originalDest = dest[i]
+					dest[i] = &data
+					defer func(index int, originalDest any) {
+						if len(data) > 0 {
+							err = msgpack.Unmarshal(data, originalDest)
+							if err != nil {
+								n := reflect.TypeOf(originalDest)
+								core.IsErr(err, "cannot convert binary to type %v: %v", n, err)
+							}
 						}
-					}
-				}(i, originalDest)
+					}(i, originalDest)
+				}
 			}
 		}
 	}

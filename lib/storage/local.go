@@ -19,7 +19,7 @@ type LocalConfig struct {
 
 type Local struct {
 	base  string
-	url   string
+	id    string
 	touch map[string]time.Time
 }
 
@@ -40,8 +40,8 @@ func OpenLocal(connectionUrl string) (Store, error) {
 	return &Local{u.Path, connectionUrl, map[string]time.Time{}}, nil
 }
 
-func (l *Local) Url() string {
-	return l.url
+func (l *Local) ID() string {
+	return l.id
 }
 
 func (l *Local) Read(name string, rang *Range, dest io.Writer, progress chan int64) error {
@@ -147,5 +147,5 @@ func (l *Local) Describe() Description {
 }
 
 func (l *Local) String() string {
-	return l.url
+	return l.id
 }

@@ -22,7 +22,7 @@ func CreateFS(c *safe.Safe, options CreateOptions) (*FS, error) {
 				return nil, err
 			}
 		} else {
-			return nil, fmt.Errorf(ErrExists, c.Store.Url())
+			return nil, fmt.Errorf(ErrExists, c.Store.ID())
 		}
 	}
 
@@ -37,6 +37,6 @@ func CreateFS(c *safe.Safe, options CreateOptions) (*FS, error) {
 
 	return &FS{
 		S:        c,
-		StoreUrl: c.Store.Url(),
+		StoreUrl: c.Store.ID(),
 	}, nil
 }

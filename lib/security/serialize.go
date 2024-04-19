@@ -46,7 +46,7 @@ func Marshal(identity *Identity, v any, signatureField string) ([]byte, error) {
 
 var listRegex = regexp.MustCompile(`(,\s*"([\w+@_=\/]+):([\w+@_=\/]+)")]$`)
 
-func Unmarshal(data []byte, v any, signatureField string) (id UserId, err error) {
+func Unmarshal(data []byte, v any, signatureField string) (id ID, err error) {
 	var sig []byte
 	var loc []int
 	data = bytes.TrimRight(data, " ")
@@ -65,7 +65,7 @@ func Unmarshal(data []byte, v any, signatureField string) (id UserId, err error)
 		return "", fmt.Errorf("no signature field dgst_ed25519_blake2b in data")
 	}
 
-	id = UserId(data[loc[4]:loc[5]])
+	id = ID(data[loc[4]:loc[5]])
 	signature64 := string(data[loc[6]:loc[7]])
 	sig, err = base64.StdEncoding.DecodeString(signature64)
 	if core.IsErr(err, "cannot decode signature: %v") {

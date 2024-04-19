@@ -25,8 +25,8 @@ import (
 type S3 struct {
 	client *s3.Client
 	bucket string
-	repr   string
-	url    string
+	id     string
+	dir    string
 }
 
 type s3logger struct{}
@@ -52,12 +52,23 @@ func OpenS3(connectionUrl string) (Store, error) {
 	accessKey := q.Get("a")
 	secret := q.Get("s")
 	proxy := q.Get("p")
-	bucket := strings.Trim(u.Path, "/")
-	repr := fmt.Sprintf("s3://%s/%s?a=%s", u.Host, bucket, accessKey)
+	region := q.Get("r")
+	if region == "" {
+		region = "auto"
+	}
+
+	parts := strings.Split(strings.TrimLeft(u.Path, "/"), "/")
+	if len(parts) == 0 {
+		return nil, core.Errorf("missing bucket in %s", connectionUrl)
+	}
+	bucket := parts[0]
+	dir := strings.Join(parts[1:], "/")
+	repr := fmt.Sprintf("s3://%s/%s", u.Host, u.Path)
 
 	options := []func(*config.LoadOptions) error{
 		config.WithEndpointResolverWithOptions(r2Resolver),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secret, "")),
+		config.WithRegion(region),
 	}
 	switch verbose {
 	case "1":
@@ -89,9 +100,9 @@ func OpenS3(connectionUrl string) (Store, error) {
 
 	s := &S3{
 		client: s3.NewFromConfig(cfg),
-		repr:   repr,
+		id:     repr,
 		bucket: bucket,
-		url:    connectionUrl,
+		dir:    dir,
 	}
 
 	err = s.createBucketIfNeeded()
@@ -99,8 +110,8 @@ func OpenS3(connectionUrl string) (Store, error) {
 	return s, s.mapError(err)
 }
 
-func (s *S3) Url() string {
-	return s.url
+func (s *S3) ID() string {
+	return s.id
 }
 
 func (s *S3) createBucketIfNeeded() error {
@@ -120,6 +131,8 @@ func (s *S3) createBucketIfNeeded() error {
 }
 
 func (s *S3) Read(name string, rang *Range, dest io.Writer, progress chan int64) error {
+	name = path.Join(s.dir, name)
+
 	rawObject, err := s.client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: &s.bucket,
 		Key:    &name,
@@ -142,6 +155,8 @@ func (s *S3) Read(name string, rang *Range, dest io.Writer, progress chan int64)
 }
 
 func (s *S3) Write(name string, source io.ReadSeeker, progress chan int64) error {
+	name = path.Join(s.dir, name)
+
 	size, err := source.Seek(0, io.SeekEnd)
 	if core.IsErr(err, "cannot seek source for '%s': %v", name) {
 		return err
@@ -160,6 +175,8 @@ func (s *S3) Write(name string, source io.ReadSeeker, progress chan int64) error
 
 func (s *S3) ReadDir(dir string, f Filter) ([]fs.FileInfo, error) {
 	var prefix string
+
+	dir = path.Join(s.dir, dir)
 
 	if f.Prefix != "" {
 		prefix = path.Join(dir, f.Prefix)
@@ -248,6 +265,8 @@ func (s *S3) mapError(err error) error {
 }
 
 func (s *S3) Stat(name string) (fs.FileInfo, error) {
+	name = path.Join(s.dir, name)
+
 	feed, err := s.client.HeadObject(context.TODO(), &s3.HeadObjectInput{
 		Bucket: &s.bucket,
 		Key:    &name,
@@ -287,6 +306,9 @@ func (s *S3) Stat(name string) (fs.FileInfo, error) {
 }
 
 func (s *S3) Rename(old, new string) error {
+	old = path.Join(s.dir, old)
+	new = path.Join(s.dir, new)
+
 	_, err := s.client.CopyObject(context.TODO(), &s3.CopyObjectInput{
 		Bucket:     &s.bucket,
 		CopySource: aws.String(url.QueryEscape(old)),
@@ -296,6 +318,7 @@ func (s *S3) Rename(old, new string) error {
 }
 
 func (s *S3) Delete(name string) error {
+	name = path.Join(s.dir, name)
 
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(s.bucket),
@@ -334,7 +357,7 @@ func (s *S3) Close() error {
 }
 
 func (s *S3) String() string {
-	return s.repr
+	return s.id
 }
 
 // Describe implements Store.

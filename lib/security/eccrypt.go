@@ -5,8 +5,8 @@ import (
 	"github.com/stregato/mio/lib/core"
 )
 
-func EcEncrypt(id string, data []byte) ([]byte, error) {
-	cryptKey, _, err := DecodeKeys(id)
+func EcEncrypt(id ID, data []byte) ([]byte, error) {
+	cryptKey, _, err := DecodeKeys(id.String())
 	if core.IsErr(err, "cannot decode keys: %v") {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func EcEncrypt(id string, data []byte) ([]byte, error) {
 	return data, err
 }
 
-func EcDecrypt(identity Identity, data []byte) ([]byte, error) {
+func EcDecrypt(identity *Identity, data []byte) ([]byte, error) {
 	cryptKey, _, err := DecodeKeys(identity.Private)
 	if core.IsWarn(err, "cannot decode keys: %v") {
 		return nil, err

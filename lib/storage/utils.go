@@ -159,9 +159,6 @@ func Dump(store Store, dir string, content bool) string {
 	sort.Strings(subdirs)
 	for _, subdir := range subdirs {
 		subdirOutput := Dump(store, subdir, content)
-		if err != nil {
-			return ""
-		}
 		builder.WriteString(subdirOutput)
 	}
 	for _, file := range files {

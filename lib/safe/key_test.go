@@ -9,12 +9,12 @@ import (
 
 func TestKeys(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := NewTestSafe(t, alice.Id, alice, "local", false)
+	s := NewTestSafe(t, alice, "local", alice.Id, false)
 
-	groups, err := s.UpdateGroup(AdminGroup, ChangeGrant, alice.Id)
+	groups, err := s.UpdateGroup(AdminGroup, Grant, alice.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 	core.Assert(t, len(groups) == 1, "wrong number of groups: %d", len(groups))
-	groups, err = s.UpdateGroup(UserGroup, ChangeGrant, alice.Id)
+	groups, err = s.UpdateGroup(UserGroup, Grant, alice.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 	core.Assert(t, len(groups) == 2, "wrong number of groups: %d", len(groups))
 
@@ -22,7 +22,7 @@ func TestKeys(t *testing.T) {
 	core.TestErr(t, err, "cannot get keys: %v")
 	core.Assert(t, len(keys) != 0, "wrong number of keys: %d", len(keys))
 
-	groups, err = s.UpdateGroup(UserGroup, ChangeRevoke, alice.Id)
+	groups, err = s.UpdateGroup(UserGroup, Revoke, alice.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 	core.Assert(t, len(groups) == 1, "wrong number of groups: %d", len(groups))
 

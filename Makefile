@@ -1,18 +1,23 @@
 # Define variables
 LIBRARY_NAME=mio.so
-LIBRARY_PATH=./pkg
+LIBRARY_PATH=./lib
+CLI_PATH=./cli
 BUILD_PATH=./build
 
 # Default target
-all: build
+all: lib cli
 
 # Target for building the shared library
-build:
+lib:
 	@mkdir -p $(BUILD_PATH)
-	go build -o $(BUILD_PATH)/$(LIBRARY_NAME) -buildmode=c-shared $(LIBRARY_PATH)/main.go
+	cd $(LIBRARY_PATH) && go build -o ../$(BUILD_PATH)/$(LIBRARY_NAME) -buildmode=c-shared main.go
+
+cli:
+	@mkdir -p $(BUILD_PATH)
+	cd $(CLI_PATH) && go build -o ../$(BUILD_PATH)/mio main.go
 
 # Target for cleaning up the build artifacts
 clean:
 	@rm -rf $(BUILD_PATH)
 
-.PHONY: all build clean
+.PHONY: all lib cli clean

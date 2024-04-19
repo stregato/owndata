@@ -13,6 +13,6 @@ func Open(S *safe.Safe) (*FS, error) {
 	}
 
 	return &FS{S: S,
-		StoreUrl: S.Store.Url(),
+		StoreUrl: S.Store.ID(),
 		Config:   config}, nil
 }

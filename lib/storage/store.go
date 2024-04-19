@@ -67,8 +67,8 @@ type Store interface {
 	// Delete deletes a file
 	Delete(name string) error
 
-	//Url returns the connection url
-	Url() string
+	//ID returns an identifier for the store, typically the URL without credentials information and other parameters
+	ID() string
 
 	// Close releases resources
 	Close() error
@@ -96,10 +96,20 @@ func Open(connectionUrl string) (Store, error) {
 		return OpenMemory(connectionUrl)
 	}
 
-	return nil, core.ErrNoDriver
+	return nil, core.Errorf("unsupported store schema in %s", connectionUrl)
 }
 
-func LoadTestURLs(filename string) (urls map[string]string) {
+func LoadTestURLs() (urls map[string]string) {
+	homeDir, err := os.UserHomeDir()
+	if core.IsErr(err, "cannot get user home dir: %v", err) {
+		panic(err)
+	}
+	filename := path.Join(homeDir, "mio_test_urls.yaml")
+	_, err = os.Stat(filename)
+	if err != nil {
+		filename = "../test_urls.yaml"
+	}
+
 	data, err := os.ReadFile(filename)
 	if core.IsErr(err, "cannot read file %s: %v", filename) {
 		panic(err)
@@ -113,17 +123,8 @@ func LoadTestURLs(filename string) (urls map[string]string) {
 }
 
 func NewTestStore(id string) Store {
-	homeDir, err := os.UserHomeDir()
-	if core.IsErr(err, "cannot get user home dir: %v", err) {
-		panic(err)
-	}
-	name := path.Join(homeDir, "owndata_test_urls.yaml")
-	_, err = os.Stat(name)
-	if err != nil {
-		name = "../test_urls.yaml"
-	}
 
-	urls := LoadTestURLs(name)
+	urls := LoadTestURLs()
 	url := urls[id]
 	if url == "" {
 		panic(fmt.Errorf("store with id %s not found", id))

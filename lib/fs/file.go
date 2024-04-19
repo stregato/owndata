@@ -23,7 +23,7 @@ type File struct {
 	Dir           string
 	Name          string
 	GroupName     safe.GroupName
-	Creator       security.UserId
+	Creator       security.ID
 	Size          int
 	ModTime       time.Time
 	Tags          core.Set[string]
@@ -147,7 +147,7 @@ func writeFileToDB(s *safe.Safe, f File) error {
 		return core.Errorf("ErrTags: tags too long: %d", len(tags))
 	}
 
-	_, err := s.Db.Exec(INSERT_FILE, sqlx.Args{"id": f.Id, "dir": f.Dir, "name": f.Name, "group": f.GroupName,
+	_, err := s.DB.Exec(INSERT_FILE, sqlx.Args{"id": f.Id, "dir": f.Dir, "name": f.Name, "group": f.GroupName,
 		"creator": f.Creator, "size": f.Size, "mod_time": f.ModTime, "tags": tags, "attributes": f.Attributes,
 		"local_path": f.LocalPath, "encryption_key": f.EncryptionKey})
 	return err
@@ -165,7 +165,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		query += " ORDER BY " + orderBy
 	}
 
-	rows, err := s.Db.QueryExt(GET_FILES_BY_DIR, query, args)
+	rows, err := s.DB.QueryExt(GET_FILES_BY_DIR, query, args)
 	if err != nil {
 		return nil, err
 	}

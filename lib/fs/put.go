@@ -78,7 +78,7 @@ func (fs *FS) putSync(dest string, src io.ReadSeekCloser, options PutOptions) er
 		Dir:           dir,
 		Name:          name,
 		GroupName:     groupName,
-		Creator:       fs.S.CurrentUser.Id,
+		Creator:       fs.S.Identity.Id,
 		Size:          int(size),
 		ModTime:       core.Now(),
 		Tags:          options.Tags,
@@ -100,7 +100,7 @@ func (fs *FS) putSync(dest string, src io.ReadSeekCloser, options PutOptions) er
 func (fs *FS) calculateGroup(dir string) (safe.GroupName, error) {
 	var groupName safe.GroupName
 	for {
-		err := fs.S.Db.QueryRow(GET_GROUP_NAME, sqlx.Args{"storeUrl": fs.StoreUrl, "dir": dir, "name": ""}, &groupName)
+		err := fs.S.DB.QueryRow(GET_GROUP_NAME, sqlx.Args{"storeUrl": fs.StoreUrl, "dir": dir, "name": ""}, &groupName)
 		if err != nil {
 			return "", err
 		}

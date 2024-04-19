@@ -23,8 +23,8 @@ func Sub(s Store, base string, propagateClose bool) Store {
 	}
 }
 
-func (s *sub) Url() string {
-	return s.Store.Url()
+func (s *sub) ID() string {
+	return s.Store.ID()
 }
 
 func (s *sub) ReadDir(name string, filter Filter) ([]fs.FileInfo, error) {

@@ -11,17 +11,19 @@ import (
 )
 
 type Safe struct {
-	Id          int
-	Db          *sqlx.DB
-	Store       storage.Store
-	CreatorId   security.UserId
-	CurrentUser *security.Identity
-	Lock        sync.RWMutex
+	Hnd       int
+	ID        string
+	URL       string
+	DB        *sqlx.DB
+	Store     storage.Store
+	CreatorId security.ID
+	Identity  *security.Identity
+	Lock      sync.RWMutex
 }
 
-var defaultDB *sqlx.DB
-var defaultDBPath string
-var currentUser *security.Identity
+var DefaultDBPath string
+var DefaultDB *sqlx.DB
+var DefaultUser *security.Identity
 
 func init() {
 	// Get the user config directory
@@ -31,14 +33,5 @@ func init() {
 	}
 
 	// Construct the path to the database file
-	defaultDBPath = filepath.Join(configDir, "mio", "mio.db")
-}
-
-func CopySafe(c *Safe) *Safe {
-	return &Safe{
-		Db:          c.Db,
-		Store:       c.Store,
-		CreatorId:   c.CreatorId,
-		CurrentUser: c.CurrentUser,
-	}
+	DefaultDBPath = filepath.Join(configDir, "mio", "mio.db")
 }

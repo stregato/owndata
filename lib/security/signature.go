@@ -36,7 +36,7 @@ func Sign(identity *Identity, data []byte) ([]byte, error) {
 	return ed25519.Sign(ed25519.PrivateKey(signKey), data), nil
 }
 
-func Verify(id UserId, data []byte, sig []byte) bool {
+func Verify(id ID, data []byte, sig []byte) bool {
 	_, signKey, err := DecodeKeys(string(id))
 	if core.IsErr(err, "cannot decode keys: %v") {
 		return false
@@ -60,7 +60,7 @@ type SignedHashEvidence struct {
 
 type SignedHash struct {
 	Hash       []byte
-	Signatures map[UserId][]byte
+	Signatures map[ID][]byte
 }
 
 func NewSignedHash(hash []byte, i *Identity) (SignedHash, error) {
@@ -71,7 +71,7 @@ func NewSignedHash(hash []byte, i *Identity) (SignedHash, error) {
 
 	return SignedHash{
 		Hash:       hash,
-		Signatures: map[UserId][]byte{i.Id: signature},
+		Signatures: map[ID][]byte{i.Id: signature},
 	}, nil
 }
 

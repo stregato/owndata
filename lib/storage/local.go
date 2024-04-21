@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"net/url"
@@ -19,35 +18,38 @@ type LocalConfig struct {
 
 type Local struct {
 	base  string
-	url   string
+	id    string
 	touch map[string]time.Time
 }
 
 func OpenLocal(connectionUrl string) (Store, error) {
 	u, err := url.Parse(connectionUrl)
-	if core.IsErr(err, "invalid URL: %v") {
-		return nil, err
+	if err != nil {
+		return nil, core.Errorw(err, "invalid URL: %v")
 	}
 
 	if u.Scheme != "file" {
-		return nil, fmt.Errorf("invalid scheme: %s", u.Scheme)
+		return nil, core.Errorf("invalid scheme: %s", u.Scheme)
 	}
 
 	if u.Host != "" {
-		return nil, fmt.Errorf("invalid host: %s", u.Host)
+		return nil, core.Errorf("invalid host: %s", u.Host)
 	}
 
 	return &Local{u.Path, connectionUrl, map[string]time.Time{}}, nil
 }
 
-func (l *Local) Url() string {
-	return l.url
+func (l *Local) ID() string {
+	return l.id
 }
 
 func (l *Local) Read(name string, rang *Range, dest io.Writer, progress chan int64) error {
 	f, err := os.Open(path.Join(l.base, name))
-	if os.IsNotExist(err) || core.IsErr(err, "cannot open file on %v:%v", l) {
+	if os.IsNotExist(err) {
 		return err
+	}
+	if err != nil {
+		return core.Errorw(err, "cannot open file on %v:%v", l)
 	}
 
 	if rang == nil {
@@ -69,8 +71,8 @@ func (l *Local) Read(name string, rang *Range, dest io.Writer, progress chan int
 			left -= sz
 		}
 	}
-	if core.IsErr(err, "cannot read from %s/%s:%v", l, name) {
-		return err
+	if err != nil {
+		return core.Errorw(err, "cannot read from %s/%s:%v", l, name)
 	}
 
 	return nil
@@ -83,19 +85,20 @@ func createDir(n string) error {
 func (l *Local) Write(name string, source io.ReadSeeker, progress chan int64) error {
 	n := filepath.Join(l.base, name)
 	err := createDir(n)
-	if core.IsErr(err, "cannot create parent of %s: %v", n) {
-		return err
+	if err != nil {
+		return core.Errorw(err, "cannot create parent of %s: %v", n)
 	}
 
 	f, err := os.Create(n)
-	if core.IsErr(err, "cannot create file on %v:%v", l) {
-		return err
+	if err != nil {
+		return core.Errorw(err, "cannot create file on %v:%v", l)
 	}
 	defer f.Close()
 
 	_, err = io.Copy(f, source)
-	if core.IsErr(err, "cannot copy file on %v:%v", l) {
+	if err != nil {
 		os.Remove(n)
+		return core.Errorw(err, "cannot copy file on %v:%v", l)
 	}
 
 	return err
@@ -147,5 +150,5 @@ func (l *Local) Describe() Description {
 }
 
 func (l *Local) String() string {
-	return l.url
+	return l.id
 }

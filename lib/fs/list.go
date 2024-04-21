@@ -17,9 +17,11 @@ type ListOptions struct {
 }
 
 func (f *FS) List(dir string, options ListOptions) ([]File, error) {
-	err := syncHeaders(f.S, dir)
-	if err != nil {
-		return nil, err
+	if f.S.IsUpdated(HeadersDir, hashDir(dir)) {
+		err := syncHeaders(f.S, dir)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return searchFiles(f.S, dir, options.After, options.Before, options.Prefix, options.Suffix, options.Tag,

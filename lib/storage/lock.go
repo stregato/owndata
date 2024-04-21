@@ -40,6 +40,10 @@ func Lock(s Store, dir, lockType string, timeout time.Duration) (release chan bo
 
 }
 
+func Unlock(release chan bool) {
+	close(release)
+}
+
 func tryLock(s Store, dir, lockType string) (release chan bool, err error) {
 	dir = path.Join(dir, LockDir)
 

@@ -10,18 +10,27 @@ import (
 	"github.com/stregato/mio/lib/storage"
 )
 
-type Safe struct {
-	Id          int
-	Db          *sqlx.DB
-	Store       storage.Store
-	CreatorId   security.UserId
-	CurrentUser *security.Identity
-	Lock        sync.RWMutex
+type Config struct {
+	Quota       int64
+	Description string
+	Signature   []byte
 }
 
-var defaultDB *sqlx.DB
-var defaultDBPath string
-var currentUser *security.Identity
+type Safe struct {
+	Hnd       int
+	ID        string
+	URL       string
+	DB        *sqlx.DB
+	Store     storage.Store
+	Config    Config
+	CreatorId security.ID
+	Identity  *security.Identity
+	Lock      sync.RWMutex
+}
+
+var DefaultDBPath string
+var DefaultDB *sqlx.DB
+var DefaultUser *security.Identity
 
 func init() {
 	// Get the user config directory
@@ -31,14 +40,5 @@ func init() {
 	}
 
 	// Construct the path to the database file
-	defaultDBPath = filepath.Join(configDir, "mio", "mio.db")
-}
-
-func CopySafe(c *Safe) *Safe {
-	return &Safe{
-		Db:          c.Db,
-		Store:       c.Store,
-		CreatorId:   c.CreatorId,
-		CurrentUser: c.CurrentUser,
-	}
+	DefaultDBPath = filepath.Join(configDir, "mio", "mio.db")
 }

@@ -26,9 +26,8 @@ import (
 type SFTP struct {
 	c     *sftp.Client
 	base  string
-	repr  string
+	id    string
 	touch map[string]time.Time
-	url   string
 }
 
 // func ParseSFTPUrl(s string) (SFTPConfig, error) {
@@ -64,13 +63,12 @@ func OpenSFTP(connectionUrl string) (Store, error) {
 
 	params := u.Query()
 
-	var repr string
+	var id string
 	var auth []ssh.AuthMethod
 
 	password, hasPassword := u.User.Password()
 	if hasPassword {
 		auth = append(auth, ssh.Password(password))
-		repr = fmt.Sprintf("sftp://%s@%s/%s", u.User.Username(), addr, u.Path)
 	}
 
 	if key := params.Get("k"); key != "" {
@@ -84,8 +82,8 @@ func OpenSFTP(connectionUrl string) (Store, error) {
 			return nil, fmt.Errorf("invalid key: %v", err)
 		}
 		auth = append(auth, ssh.PublicKeys(signer))
-		repr = fmt.Sprintf("sftp://PKEY@%s/%s", addr, u.Path)
 	}
+	id = fmt.Sprintf("sftp://%s/%s", addr, u.Path)
 
 	if len(auth) == 0 {
 		return nil, fmt.Errorf("no auth method provided for sftp connection to %s", addr)
@@ -110,11 +108,11 @@ func OpenSFTP(connectionUrl string) (Store, error) {
 	if base == "" {
 		base = "/"
 	}
-	return &SFTP{c, base, repr, map[string]time.Time{}, connectionUrl}, nil
+	return &SFTP{c, base, id, map[string]time.Time{}}, nil
 }
 
-func (s *SFTP) Url() string {
-	return s.url
+func (s *SFTP) ID() string {
+	return s.id
 }
 
 func (s *SFTP) Read(name string, rang *Range, dest io.Writer, progress chan int64) error {
@@ -226,7 +224,7 @@ func (s *SFTP) Close() error {
 }
 
 func (s *SFTP) String() string {
-	return s.repr
+	return s.id
 }
 
 // Describe implements Store.

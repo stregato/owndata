@@ -12,13 +12,13 @@ import (
 )
 
 func TestS3(t *testing.T) {
-	credentials := LoadTestURLs("../../../credentials/urls.yaml")
+	credentials := LoadTestURLs()
 	testStore(t, credentials["s3"])
 
 }
 
 func TestWebdav(t *testing.T) {
-	credentials := LoadTestURLs("../../../credentials/urls.yaml")
+	credentials := LoadTestURLs()
 	testStore(t, credentials["dav"])
 }
 

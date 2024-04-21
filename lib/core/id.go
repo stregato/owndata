@@ -19,7 +19,7 @@ func SnowID() uint64 {
 }
 
 func SnowIDString() string {
-	return strconv.FormatUint(SnowID(), 10)
+	return strconv.FormatUint(SnowID(), 16)
 }
 
 func TimeFromID(id uint64) time.Time {

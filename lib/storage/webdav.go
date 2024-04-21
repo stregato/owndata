@@ -51,7 +51,7 @@ func OpenWebDAV(connectionUrl string) (Store, error) {
 	return w, nil
 }
 
-func (w *WebDAV) Url() string {
+func (w *WebDAV) ID() string {
 	return w.url
 }
 

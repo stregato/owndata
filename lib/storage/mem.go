@@ -41,7 +41,7 @@ func OpenMemory(connectionUrl string) (Store, error) {
 	return m, nil
 }
 
-func (m *Memory) Url() string {
+func (m *Memory) ID() string {
 	return m.url
 }
 

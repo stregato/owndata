@@ -5,14 +5,16 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
-	"hash"
 	"io/fs"
 	"math/rand"
 	"os"
 	"path"
 	"sort"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/stregato/mio/lib/config"
 	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/security"
 	"github.com/stregato/mio/lib/storage"
@@ -20,8 +22,8 @@ import (
 )
 
 type GroupName string
-type Groups map[GroupName]core.Set[security.UserId]
-type Endorsers core.Set[security.UserId]
+type Groups map[GroupName]core.Set[security.ID]
+type Endorsers core.Set[security.ID]
 
 const (
 	UserGroup                   GroupName = "usr"
@@ -36,22 +38,22 @@ var GroupChangeFileSize int64 = 1024 * 1024 * 128
 type Change uint64
 
 const (
-	ChangeGrant   Change = iota // ChangeGrant grants access to a group
-	ChangeRevoke                // ChangeRevoke revokes access to a group
-	ChangeCurse                 // ChangeCurse revokes access to all groups and invalidate all changes done by the user
-	ChangeEndorse               // ChangeEndorse endorses the validity of the group chain
+	Grant   Change = iota // Grant grants access to a group
+	Revoke                // Revoke revokes access to a group
+	Curse                 // Curse revokes access to all groups and invalidate all changes done by the user
+	Endorse               // Endorse endorses the validity of the group chain
 
 	batchSize       = 1024
 	ChangeCheckFreq = 8
 )
 
 type GroupChange struct {
-	GroupName GroupName       `msgpack:"g"`
-	UserId    security.UserId `msgpack:"u"`
-	Change    Change          `msgpack:"c"`
-	Timestamp int64           `msgpack:"t"`
-	Signer    security.UserId `msgpack:"k"`
-	Signature []byte          `msgpack:"s"`
+	GroupName GroupName   `msgpack:"g"`
+	Change    Change      `msgpack:"c"`
+	UserId    security.ID `msgpack:"u"`
+	Signer    security.ID `msgpack:"k"`
+	Signature []byte      `msgpack:"s"`
+	Timestamp int64       `msgpack:"t"`
 }
 
 type GroupChangeFile struct {
@@ -62,95 +64,99 @@ type GroupChangeFile struct {
 type GroupChain struct {
 	Changes []GroupChange
 	Groups  Groups
-	Hash    []byte
 }
 
 func (s *Safe) GetGroups() (Groups, error) {
-	g, err := syncGroupChain(s)
+	g, err := SyncGroupChain(s)
 	if err != nil {
 		return nil, err
 	}
 	return g.Groups, nil
 }
 
-func (s *Safe) UpdateGroup(groupName GroupName, change Change, users ...security.UserId) (Groups, error) {
+func (s *Safe) UpdateGroup(groupName GroupName, change Change, users ...security.ID) (Groups, error) {
 
-	for {
-		g, err := syncGroupChain(s)
-		if err != nil {
-			return nil, err
+	var lastSignature []byte
+
+	lock, err := storage.Lock(s.Store, GroupDir, "chain", time.Minute)
+	defer storage.Unlock(lock)
+	if err != nil {
+		return nil, err
+	}
+
+	g, err := SyncGroupChain(s)
+	if err != nil {
+		return nil, err
+	}
+
+	batchId := len(g.Changes) / batchSize
+
+	var gcs []GroupChange
+	var createNewKey bool
+
+	if len(g.Changes) > 0 {
+		lastSignature = g.Changes[len(g.Changes)-1].Signature
+	}
+	groups := core.CopyMap(g.Groups)
+	for _, user := range users {
+		// check if the user is already in the group and skip the change in case of Grant
+		if change == Grant && groups[groupName].Contains(user) {
+			core.Info("user %s is already in the group %s", user.Nick(), groupName)
+			continue
 		}
-
-		batchId := getLastBatchId(g)
-
-		var gcs []GroupChange
-		var isRevoked bool
-
-		groups := core.CopyMap(g.Groups)
-		h := security.NewHash(g.Hash)
-		for _, user := range users {
-			gc := GroupChange{
-				GroupName: groupName,
-				UserId:    user,
-				Change:    change,
-			}
-			gc, err = signGroupChange(gc, h, s.CurrentUser) // sign the change
-			if err != nil {
-				return nil, err
-			}
-			err = applyChange(gc, groups) // apply the change to the local groups
-			if err != nil {
-				return nil, err
-			}
-			if gc.Change == ChangeRevoke {
-				isRevoked = true
-			}
-			gcs = append(gcs, gc)
-		}
-		finalHash := h.Sum(nil)
-
-		gcs = append(g.Changes, gcs...)
-		err = writeGroupChanges(s.Store, gcs, batchId)
-		if err != nil {
-			return nil, err
-		}
-		storeHasChanged(s.Db, s.Store, GroupDir)
-
-		rgcs, err := readGroupChanges(s.Store, batchId)
-		if err != nil {
-			return nil, err
-		}
-
-		var mismatch bool
-		for i, gc := range gcs {
-			if i >= len(rgcs) || !changeEqual(gc, rgcs[i]) {
-				mismatch = true
-				break
-			}
-		}
-		if mismatch { // the local changes are not in the remote store yet, retry
+		// check if the user is not in the group and skip the change in case of Revoke
+		if change == Revoke && !groups[groupName].Contains(user) {
+			core.Info("user %s is not in the group %s", user.Nick(), groupName)
 			continue
 		}
 
-		g.Changes = gcs
-		g.Hash = finalHash
-		g.Groups = groups
-
-		if isRevoked {
-			_, err = addKey(s, groupName, groups)
-			if err != nil {
-				return nil, err
-			}
-			keysCache.Delete(fmt.Sprintf("%s/%s", s.Store.Url(), groupName))
+		// create a new group change
+		gc := GroupChange{
+			GroupName: groupName,
+			UserId:    user,
+			Change:    change,
 		}
-
-		err = SetConfigStruct(s.Db, GroupChainNode, s.Store.Url(), g)
+		gc, err = signGroupChange(gc, lastSignature, s.Identity) // sign the change
 		if err != nil {
 			return nil, err
 		}
-
-		return groups, err
+		err = applyChange(gc, groups, s.CreatorId) // apply the change to the local groups
+		if err != nil {
+			return nil, err
+		}
+		// if the change is a Revoke, a new key must be added to the store
+		if gc.Change == Revoke {
+			createNewKey = true
+		}
+		gcs = append(gcs, gc)
+		lastSignature = gc.Signature
+		core.Info("group change created and added to the chain: %s", gc)
 	}
+	if len(gcs) == 0 {
+		return groups, nil
+	}
+
+	gcs = append(g.Changes, gcs...)
+	err = writeGroupChanges(s.Store, gcs, batchId)
+	if err != nil {
+		return nil, err
+	}
+	s.Touch(GroupDir)
+
+	g.Changes = gcs
+	g.Groups = groups
+
+	_, err = updateKeys(s, groupName, groups, createNewKey)
+	if err != nil {
+		return nil, err
+	}
+
+	err = config.SetConfigStruct(s.DB, config.GroupChainDomain, s.Store.ID(), g)
+	if err != nil {
+		return nil, err
+	}
+
+	return groups, err
 }
 
 func (g Groups) ToString() string {
@@ -169,21 +175,22 @@ const (
 
 const GroupChainNode = "GroupChain"
 
-func syncGroupChain(s *Safe) (GroupChain, error) {
+func SyncGroupChain(s *Safe) (GroupChain, error) {
 	var g GroupChain
-	err := GetConfigStruct(s.Db, GroupChainNode, s.Store.Url(), &g)
-	if err == sql.ErrNoRows {
-		g.Groups = Groups{AdminGroup: core.NewSet(s.CreatorId)}
-	} else if err != nil {
+	err := config.GetConfigStruct(s.DB, config.GroupChainDomain, s.Store.ID(), &g)
+	if err != sql.ErrNoRows && err != nil {
 		return GroupChain{}, err
 	}
-	if !hasStoreChanged(s.Db, s.Store, GroupDir) {
+
+	noChainInDB := err != sql.ErrNoRows
+	if noChainInDB && !s.IsUpdated(GroupDir) {
+		core.Info("group chain is up to date, using the local copy")
 		return g, nil
 	}
 
 	var batchId int
 	if rand.Intn(ChangeCheckFreq) > 0 { // occasionally check the full history on the remote store
-		batchId = getLastBatchId(g)
+		batchId = len(g.Changes) / batchSize
 	}
 
 	rgcs, err := readGroupChanges(s.Store, batchId)
@@ -192,13 +199,17 @@ func syncGroupChain(s *Safe) (GroupChain, error) {
 	}
 
 	var lead int
-	lead, g = addChanges(g, rgcs, batchId)
+	lead, g = addChanges(g, rgcs, batchId, s.CreatorId)
 	switch lead {
 	case leadLocal:
+		core.Info("local group chain is lead, writing the changes to the store")
 		err = writeGroupChanges(s.Store, g.Changes, batchId)
-		storeHasChanged(s.Db, s.Store, GroupDir)
+		s.Touch(GroupDir)
 	case leadRemote:
-		err = SetConfigStruct(s.Db, GroupChainNode, s.Store.Url(), g)
+		core.Info("remote group chain is lead, updating the local copy")
+		err = config.SetConfigStruct(s.DB, config.GroupChainDomain, s.Store.ID(), g)
+	default:
+		core.Info("neither local nor remote group chain is lead, doing nothing hoping another peer will resolve the conflict")
 	}
 	if err != nil {
 		return GroupChain{}, err
@@ -207,27 +218,15 @@ func syncGroupChain(s *Safe) (GroupChain, error) {
 	return g, nil
 }
 
-func getLastBatchId(g GroupChain) int {
-	var n int
-
-	ln := len(g.Changes)
-	n = ln / batchSize
-	if ln%batchSize > 0 {
-		n++
-	}
-	return n
-}
-
 func changeEqual(local, remote GroupChange) bool {
 	return local.GroupName == remote.GroupName && local.UserId == remote.UserId && local.Change == remote.Change &&
 		local.Signer == remote.Signer && bytes.Equal(local.Signature, remote.Signature)
 }
 
-func addChanges(g GroupChain, remoteGcs []GroupChange, batchId int) (int, GroupChain) {
+func addChanges(g GroupChain, remoteGcs []GroupChange, batchId int, creatorId security.ID) (int, GroupChain) {
 	firstMismatch := -1
 
 	localGcs := g.Changes
-	h := security.NewHash(g.Hash)
 
 	i, offset := 0, batchId*batchSize
 	for i := 0; i+offset < len(localGcs) && i < len(remoteGcs); i++ {
@@ -241,29 +240,38 @@ func addChanges(g GroupChain, remoteGcs []GroupChange, batchId int) (int, GroupC
 	remoteEnd := i == len(remoteGcs)
 
 	var err error
+	var lastSignature []byte
+
+	if len(localGcs) > 0 {
+		lastSignature = localGcs[len(localGcs)-1].Signature
+	}
 	groups := core.CopyMap(g.Groups)
 	for j := i; j < len(remoteGcs); j++ {
-		err = validateGroupChain(remoteGcs[j], h)
+		err = validateGroupChain(remoteGcs[j], lastSignature)
 		if err != nil {
 			return -1, g
 		}
 
-		err = applyChange(remoteGcs[j], groups)
+		err = applyChange(remoteGcs[j], groups, creatorId)
 		if err != nil {
 			core.Info("failed to apply group change: %v", err)
 		}
+		lastSignature = remoteGcs[j].Signature
 	}
 
 	if !hasFork && localEnd && remoteEnd { // the chains are identical
+		core.Info("local and remote group chains are identical")
 		return 0, g
 	}
 
 	if !hasFork && localEnd && !remoteEnd { // the local chain is a prefix of the remote chain
+		core.Info("local group chain is a prefix of the remote group chain")
 		changes := append(localGcs, remoteGcs[offset:]...)
-		return 1, GroupChain{Changes: changes, Groups: groups, Hash: h.Sum(nil)}
+		return 1, GroupChain{Changes: changes, Groups: groups}
 	}
 
 	if !hasFork && !localEnd && remoteEnd { // the remote chain is a prefix of the local chain
+		core.Info("remote group chain is a prefix of the local group chain")
 		return -1, g
 	}
 
@@ -271,11 +279,14 @@ func addChanges(g GroupChain, remoteGcs []GroupChange, batchId int) (int, GroupC
 		localEndorsement := calculateEndorsement(localGcs, firstMismatch, len(localGcs))
 		remoteEndorsement := calculateEndorsement(remoteGcs, firstMismatch, len(remoteGcs))
 		if localEndorsement < remoteEndorsement {
+			core.Info("remote group chain has more endorsements, using it")
 			changes := append(localGcs, remoteGcs[offset:]...)
-			return 1, GroupChain{Changes: changes, Groups: groups, Hash: h.Sum(nil)}
+			return 1, GroupChain{Changes: changes, Groups: groups}
 		} else if localEndorsement > remoteEndorsement {
+			core.Info("local group chain has more endorsements, ignoring the remote changes")
 			return -1, g
 		} else {
+			core.Info("local and remote group chains have the same number of endorsements. Do nothing")
 			return 0, g
 		}
 	}
@@ -284,23 +295,29 @@ func addChanges(g GroupChain, remoteGcs []GroupChange, batchId int) (int, GroupC
 	panic("unexpected state")
 }
 
-func validateGroupChain(gc GroupChange, h hash.Hash) error {
-	err := updateGroupChangeHash(gc, h)
+func validateGroupChain(gc GroupChange, lastSignature []byte) error {
+	h, err := getGroupChangeHash(gc, lastSignature)
 	if err != nil {
 		return err
 	}
 
-	data := h.Sum(nil)
-	if !security.Verify(gc.Signer, data, gc.Signature) {
+	if !security.Verify(gc.Signer, h, gc.Signature) {
 		return fmt.Errorf(ErrGroupChangeSignature)
 	}
+
+	core.Info("group change validated: %s", gc)
 	return nil
 }
 
-func applyChange(gc GroupChange, groups Groups) error {
+func applyChange(gc GroupChange, groups Groups, creatorId security.ID) error {
+	var skipCheck bool
+	if len(groups) == 0 {
+		skipCheck = gc.UserId == creatorId
+	}
+
 	switch gc.Change {
-	case ChangeGrant:
-		if !groups[AdminGroup].Contains(gc.Signer) {
+	case Grant:
+		if !skipCheck && !groups[AdminGroup].Contains(gc.Signer) {
 			return fmt.Errorf(ErrGroupChangeAuthorization)
 		}
 		if groups[gc.GroupName] == nil {
@@ -309,14 +326,16 @@ func applyChange(gc GroupChange, groups Groups) error {
 			groups[gc.GroupName].Add(gc.UserId)
 		}
 
-	case ChangeRevoke:
-		if !groups[AdminGroup].Contains(gc.Signer) {
+	case Revoke:
+		if !skipCheck && !groups[AdminGroup].Contains(gc.Signer) {
 			return fmt.Errorf(ErrGroupChangeAuthorization)
 		}
 		if groups[gc.GroupName] != nil {
 			groups[gc.GroupName].Remove(gc.UserId)
 		}
 	}
+
+	core.Info("group change applied: %s", gc)
 
 	return nil
 }
@@ -326,9 +345,9 @@ func calculateEndorsement(gcs []GroupChange, start, end int) int {
 	var endorsement int
 	for i := start; i < end; i++ {
 		switch gcs[i].Change {
-		case ChangeEndorse:
+		case Endorse:
 			endorsers[gcs[i].UserId] = true
-		case ChangeRevoke, ChangeGrant:
+		case Revoke, Grant:
 			endorsers = Endorsers{}
 			endorsement++
 		}
@@ -336,50 +355,38 @@ func calculateEndorsement(gcs []GroupChange, start, end int) int {
 	return endorsement
 }
 
-// }
-
-func updateGroupChangeHash(gc GroupChange, h hash.Hash) error {
+func getGroupChangeHash(gc GroupChange, lastSig []byte) ([]byte, error) {
 	var buf []byte
 	var err error
 
+	buf = append(buf, lastSig...)
 	buf = append(buf, gc.GroupName...)
 	buf = append(buf, gc.UserId...)
 	buf = binary.AppendUvarint(buf, uint64(gc.Change))
-	buf = binary.AppendUvarint(buf, uint64(gc.Timestamp))
 	buf = append(buf, gc.Signer...)
 
+	h := security.NewHash(nil)
 	_, err = h.Write(buf)
 	if err != nil {
-		return core.Errorw(err, "failed to write to blake2b hash: %v")
+		return nil, core.Errorw(err, "failed to write to blake2b hash: %v")
 	}
-	return nil
+	return h.Sum(nil), nil
 }
 
-func newGroupChange(group GroupName, user security.UserId, change Change, h hash.Hash, signer *security.Identity) (GroupChange, error) {
-	gc := GroupChange{
-		GroupName: group,
-		UserId:    user,
-		Change:    change,
-		Signer:    signer.Id,
-	}
-	return signGroupChange(gc, h, signer)
-}
-
-func signGroupChange(gc GroupChange, h hash.Hash, signer *security.Identity) (GroupChange, error) {
+func signGroupChange(gc GroupChange, lastSignature []byte, signer *security.Identity) (GroupChange, error) {
 	gc.Timestamp = core.Now().UnixMicro()
 	gc.Signer = signer.Id
 
-	err := updateGroupChangeHash(gc, h)
+	h, err := getGroupChangeHash(gc, lastSignature)
 	if err != nil {
 		return GroupChange{}, core.Errorw(err, "failed to calculate group change hash: %v")
 	}
 
-	data := h.Sum(nil)
-	sig, err := security.Sign(signer, data)
+	signature, err := security.Sign(signer, h)
 	if core.IsErr(err, "failed to sign group change: %v") {
 		return GroupChange{}, err
 	}
-	gc.Signature = sig
+	gc.Signature = signature
 	return gc, nil
 }
 
@@ -402,6 +409,7 @@ func readGroupChanges(store storage.Store, firstBatchId int) ([]GroupChange, err
 	})
 	sort.Ints(ids)
 
+	var batches []string
 	// read the group changes from the files in increasing order of their ids
 	for _, id := range ids {
 		var changes []GroupChange
@@ -410,12 +418,17 @@ func readGroupChanges(store storage.Store, firstBatchId int) ([]GroupChange, err
 			return nil, err
 		}
 		gcs = append(gcs, changes...)
+		batches = append(batches, strconv.Itoa(id))
 	}
+
+	core.Info("group changes read from the store from batches [%s]", strings.Join(batches, " "))
 	return gcs, nil
 }
 
 func writeGroupChanges(store storage.Store, gcs []GroupChange, fromBatchId int) error {
 	i := fromBatchId
+	var batches []string
+
 	// loop over the changes in batches, each batch is batchSize long and is stored in a separate file
 	for offset := fromBatchId * batchSize; offset < len(gcs); offset += batchSize {
 		end := offset + batchSize
@@ -427,8 +440,51 @@ func writeGroupChanges(store storage.Store, gcs []GroupChange, fromBatchId int) 
 		if err != nil {
 			return core.Errorw(err, "failed to write group changes: %v")
 		}
+		batches = append(batches, strconv.Itoa(i))
 		i++
 	}
 
+	core.Info("group changes written to the store on batches [%s]", strings.Join(batches, " "))
 	return nil
+}
+
+func (g GroupName) String() string {
+	return string(g)
+}
+
+func (groups Groups) String() string {
+	var buf bytes.Buffer
+	for n, g := range groups {
+		buf.WriteString(fmt.Sprintf("%s: ", n))
+		for _, u := range g.Slice() {
+			buf.WriteString(fmt.Sprintf("%s ", u.Nick()))
+		}
+		buf.WriteString("\n")
+	}
+	return buf.String()
+}
+
+func (gc GroupChange) String() string {
+	var change string
+	switch gc.Change {
+	case Grant:
+		change = "granted to"
+	case Revoke:
+		change = "revoked from"
+	case Curse:
+		change = "cursed from"
+	}
+	return fmt.Sprintf("%s %s %s by %s", gc.UserId.Nick(), change, gc.GroupName, gc.Signer.Nick())
+}
+
+func (gc GroupChain) String() string {
+	var buf bytes.Buffer
+	for i, c := range gc.Changes {
+		buf.WriteString(fmt.Sprintf("%d: %s\n", i, c))
+	}
+
+	buf.WriteString("Groups\n")
+	buf.WriteString(gc.Groups.String())
+
+	return buf.String()
 }

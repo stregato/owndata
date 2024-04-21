@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"github.com/stregato/mio/lib/config"
 	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/security"
 	"github.com/stregato/mio/lib/storage"
@@ -17,15 +19,14 @@ import (
 
 const (
 	KeysDir = "keys"
-	KeyNode = "keys"
 )
 
 type Key []byte
 type Keystore struct {
-	MasterKey map[security.UserId]Key
-	DataKeys  []byte
-	Signature []byte
-	Signer    security.UserId
+	EnvelopeKey map[security.ID]Key
+	DataKeys    []byte
+	Signature   []byte
+	Signer      security.ID
 }
 
 type KeyData struct {
@@ -37,7 +38,7 @@ var keysCache = cache.New(time.Minute, time.Hour)
 // GetKeys returns the encryption keys for the given group. If the user is not authorized to access the keys, it returns a AuthErr.
 // The parameter expectedMinLength is used to check if the number of keys is at least the expected value. If it is 0, the check is skipped.
 func (s *Safe) GetKeys(groupName GroupName, expectedMinLength int) ([]Key, error) {
-	k, found := keysCache.Get(fmt.Sprintf("%s/%s", s.Store.Url(), groupName))
+	k, found := keysCache.Get(fmt.Sprintf("%s/%s", s.Store.ID(), groupName))
 	if found {
 		keys, ok := k.([]Key)
 		if ok && (expectedMinLength == 0 || len(keys) >= expectedMinLength) {
@@ -50,24 +51,39 @@ func (s *Safe) GetKeys(groupName GroupName, expectedMinLength int) ([]Key, error
 	}
 
 	g := groups[groupName]
-	if !g.Contains(s.CurrentUser.Id) {
-		return nil, core.Errorf("AuthErr: user %s is not in the group %s", s.CurrentUser.Id, groupName)
+	if !g.Contains(s.Identity.Id) {
+		return nil, core.Errorf("AuthErr: user %s is not in the group %s", s.Identity.Id, groupName)
 	}
 
 	return syncKeys(s, groupName, groups)
 }
 
-func syncKeys(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
-	keys, err := readKeystore(c, groupName, groups)
+func syncKeys(s *Safe, groupName GroupName, groups Groups) ([]Key, error) {
+	var keys []Key
+	var err error
+	_keys, ok := keysCache.Get(path.Join(s.ID, groupName.String()))
+	if ok {
+		keys = _keys.([]Key)
+	} else {
+		keys, err = readKeysFromDb(s, groupName)
+		if err != nil {
+			keys = nil
+		}
+	}
+	if keys != nil && !s.IsUpdated(KeysDir) {
+		return keys, nil
+	}
+
+	keys, err = readKeystore(s, groupName, groups)
 	if os.IsNotExist(err) {
-		keys, err = readKeysFromDb(c, groupName)
+		keys, err = readKeysFromDb(s, groupName)
 		if err == sql.ErrNoRows {
 			keys = []Key{core.GenerateRandomBytes(32)}
 		} else if err != nil {
 			return nil, err
 		}
 
-		err = writeKeystore(c, groupName, groups, keys)
+		err = writeKeystore(s, groupName, groups, keys)
 		if err != nil {
 			return nil, err
 		}
@@ -75,52 +91,55 @@ func syncKeys(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = writeKeysToDb(c, groupName, keys)
+	err = writeKeysToDb(s, groupName, keys)
 	if err != nil {
 		return nil, err
 	}
-	keysCache.Set(fmt.Sprintf("%s/%s", c.Store.Url(), groupName), keys, cache.DefaultExpiration)
+	keysCache.Set(fmt.Sprintf("%s/%s", s.ID, groupName), keys, cache.DefaultExpiration)
+	s.Touch(KeysDir)
 	return keys, nil
 }
 
-func addKey(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
-	var retries int
-retry:
-	if retries++; retries > 10 {
-		return nil, core.Errorf("keyAddErr: cannot add new excryption key after %d retries", retries)
+func updateKeys(c *Safe, groupName GroupName, groups Groups, createNewDataKey bool) ([]Key, error) {
+
+	lock, err := storage.Lock(c.Store, KeysDir, "keys", time.Minute)
+	if err != nil {
+		return nil, err
 	}
+	defer storage.Unlock(lock)
 
 	keys, err := syncKeys(c, groupName, groups)
 	if err != nil {
 		return nil, err
 	}
 
-	keys = append(keys, core.GenerateRandomBytes(32))
+	if createNewDataKey {
+		keys = append(keys, core.GenerateRandomBytes(32))
+	}
 	err = writeKeystore(c, groupName, groups, keys)
 	if err != nil {
-		goto retry
+		return nil, err
 	}
 
 	err = writeKeysToDb(c, groupName, keys)
 	if err != nil {
 		return nil, err
 	}
-	keysCache.Set(fmt.Sprintf("%s/%s", c.Store.Url(), groupName), keys, cache.DefaultExpiration)
+	keysCache.Set(fmt.Sprintf("%s/%s", c.Store.ID(), groupName), keys, cache.DefaultExpiration)
 
 	return keys, nil
-
 }
 
 func writeKeysToDb(c *Safe, groupName GroupName, keys []Key) error {
 	k := path.Join(KeysDir, string(groupName))
-	return SetConfigStruct(c.Db, KeyNode, k, keys)
+	return config.SetConfigStruct(c.DB, config.KeystoreDomain, k, keys)
 }
 
 // readKeysFromDb reads keys from the sql. It returns sql.ErrNoRows if the keys are not found.
 func readKeysFromDb(c *Safe, groupName GroupName) ([]Key, error) {
 	var keys []Key
 	k := path.Join(KeysDir, string(groupName))
-	err := GetConfigStruct(c.Db, KeyNode, k, &keys)
+	err := config.GetConfigStruct(c.DB, config.KeystoreDomain, k, &keys)
 	return keys, err
 }
 
@@ -142,12 +161,22 @@ func readKeystore(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
 		return nil, core.Errorf("InvalidSignatureErr: invalid signature for group %s", groupName)
 	}
 
-	masterKey, ok := keystore.MasterKey[c.CurrentUser.Id]
-	if !ok {
-		return nil, core.Errorf("AuthErr: user %s is not authorized to access the keys for group %s", c.CurrentUser.Id, groupName)
-	}
+	core.Info("keystore %s.ks read successfully: users %s", groupName, strings.Join(
+		core.Apply(core.Keys(keystore.EnvelopeKey), func(id security.ID) (string, bool) {
+			return id.Nick(), true
+		}), ", "))
 
-	data, err := security.DecryptAES(keystore.DataKeys, masterKey)
+	envelopeKey, ok := keystore.EnvelopeKey[c.Identity.Id]
+	if !ok {
+		return nil, core.Errorf("AuthErr: user %s is not authorized to access the keys for group %s", c.Identity.Id, groupName)
+	}
+	envelopeKey, err = security.EcDecrypt(c.Identity, envelopeKey)
+	if err != nil {
+		return nil, core.Errorw(err, "cannot decrypt master key for %s", c.Identity.Id.Nick())
+	}
+	core.Info("envelope key decrypted successfully for user %s", c.Identity.Id.Nick())
+
+	data, err := security.DecryptAES(keystore.DataKeys, envelopeKey)
 	if err != nil {
 		return nil, err
 	}
@@ -157,11 +186,17 @@ func readKeystore(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
 	if err != nil {
 		return nil, err
 	}
+	core.Info("data keys decrypted successfully for user %s", c.Identity.Id.Nick())
 
 	return keys, nil
 }
 
 func writeKeystore(c *Safe, groupName GroupName, groups Groups, keys []Key) error {
+	adminGroup := groups[AdminGroup]
+	if !adminGroup.Contains(c.Identity.Id) {
+		return core.Errorf("AuthErr: user %s is not in the group %s", c.Identity.Id, AdminGroup)
+	}
+
 	data, err := msgpack.Marshal(keys)
 	if err != nil {
 		return err
@@ -174,20 +209,22 @@ func writeKeystore(c *Safe, groupName GroupName, groups Groups, keys []Key) erro
 	}
 
 	keystore := Keystore{
-		MasterKey: make(map[security.UserId]Key),
-		DataKeys:  data,
-		Signer:    c.CurrentUser.Id,
+		EnvelopeKey: make(map[security.ID]Key),
+		DataKeys:    data,
+		Signer:      c.Identity.Id,
 	}
 	group := groups[groupName]
+	var users []string
 	for userId := range group {
-		encryptedMasterKey, err := security.EcEncrypt(string(userId), masterKey)
+		encryptedMasterKey, err := security.EcEncrypt(userId, masterKey)
 		if core.IsErr(err, "cannot encrypt master key for user id %s: %v", userId) {
 			continue
 		}
 
-		keystore.MasterKey[userId] = encryptedMasterKey
+		keystore.EnvelopeKey[userId] = encryptedMasterKey
+		users = append(users, userId.Nick())
 	}
-	keystore.Signature, err = security.Sign(c.CurrentUser, data)
+	keystore.Signature, err = security.Sign(c.Identity, data)
 	if err != nil {
 		return err
 	}
@@ -197,6 +234,7 @@ func writeKeystore(c *Safe, groupName GroupName, groups Groups, keys []Key) erro
 	if err != nil {
 		return err
 	}
+	core.Info("keystore %s.ks written successfully by %s: users %s", groupName, c.Identity.Id.Nick(), strings.Join(users, ", "))
 
 	var keystore2 Keystore
 	err = storage.ReadMsgPack(c.Store, filename, &keystore2) // read and parse the keystore

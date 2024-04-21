@@ -18,12 +18,5 @@ var (
 )
 
 type FS struct {
-	S        *safe.Safe
-	StoreUrl string
-	Config   Config
-}
-
-type Config struct {
-	Quota       int64
-	Description string
+	S *safe.Safe
 }

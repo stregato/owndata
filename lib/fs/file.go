@@ -1,9 +1,11 @@
 package fs
 
 import (
-	"encoding/hex"
 	"fmt"
+	"hash/fnv"
+	"math/rand"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,20 +17,20 @@ import (
 
 	"github.com/stregato/mio/lib/storage"
 	"github.com/vmihailenco/msgpack/v5"
-	"golang.org/x/crypto/blake2b"
 )
 
 type File struct {
-	Id            string
+	ID            string
 	Dir           string
 	Name          string
 	GroupName     safe.GroupName
-	Creator       security.UserId
+	Creator       security.ID
 	Size          int
 	ModTime       time.Time
 	Tags          core.Set[string]
 	Attributes    map[string]any
-	LocalPath     string
+	LocalCopy     string
+	CopyTime      time.Time
 	EncryptionKey []byte
 }
 
@@ -43,39 +45,32 @@ type FileWrap struct {
 }
 
 func hashDir(dir string) string {
-	h, err := blake2b.New256(nil)
+	hasher := fnv.New64a() // FNV-1a variant provides slightly better dispersion for tiny differences in strings
+	_, err := hasher.Write([]byte(dir))
 	if err != nil {
+		// Handle error in a real application
 		panic(err)
 	}
-
-	paddingLen := 128 - len(dir)%128
-	data := []byte(dir)
-	if paddingLen > 0 {
-		data = append(data, 0)
-		data = append(data, core.GenerateRandomBytes(paddingLen-1)...)
-	}
-
-	_, err = h.Write(data)
-	return hex.EncodeToString(h.Sum(nil))
+	return strconv.FormatUint(hasher.Sum64(), 16)
 }
 
-func writeHeader(s *safe.Safe, f File) error {
-	dest := path.Join(HeadersDir, hashDir(f.Dir), core.SnowIDString())
+func writeHeader(s *safe.Safe, f File) (string, error) {
+	dest := path.Join(HeadersDir, hashDir(f.Dir), f.ID)
 
 	keys, err := s.GetKeys(f.GroupName, 0)
 	if err != nil {
-		return err
+		return "", err
 	}
 	lastKey := keys[len(keys)-1]
 
 	data, err := msgpack.Marshal(f)
 	if err != nil {
-		return core.Errorf("failed to marshal file header of %s/%s: %w", f.Dir, f.Name, err)
+		return "", core.Errorf("failed to marshal file header of %s/%s: %w", f.Dir, f.Name, err)
 	}
 
 	data, err = security.EncryptAES(data, lastKey)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	fw := FileWrap{
@@ -84,7 +79,11 @@ func writeHeader(s *safe.Safe, f File) error {
 		Data:         data,
 	}
 	err = storage.WriteMsgPack(s.Store, dest, fw)
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return dest, err
 }
 
 func readHeader(s *safe.Safe, dir, name string) (File, error) {
@@ -119,12 +118,24 @@ func readHeader(s *safe.Safe, dir, name string) (File, error) {
 }
 
 func syncHeaders(s *safe.Safe, dir string) error {
-	ls, err := s.Store.ReadDir(path.Join(HeadersDir, dir), storage.Filter{})
+	ls, err := s.Store.ReadDir(path.Join(HeadersDir, hashDir(dir)), storage.Filter{})
 	if err != nil {
 		return err
 	}
 
+	var lastID string
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if r.Intn(10) == 0 {
+		err = s.DB.QueryRow("GET_LAST_ID", sqlx.Args{"safeID": s.ID}, &lastID)
+		if err != nil && err != sqlx.ErrNoRows {
+			return err
+		}
+	}
+
 	for _, l := range ls {
+		if l.Name() <= lastID {
+			continue
+		}
 		f, err := readHeader(s, dir, l.Name())
 		if err != nil {
 			log.Error("failed to read header %s/%s: %w", dir, l.Name(), err)
@@ -147,9 +158,9 @@ func writeFileToDB(s *safe.Safe, f File) error {
 		return core.Errorf("ErrTags: tags too long: %d", len(tags))
 	}
 
-	_, err := s.Db.Exec(INSERT_FILE, sqlx.Args{"id": f.Id, "dir": f.Dir, "name": f.Name, "group": f.GroupName,
-		"creator": f.Creator, "size": f.Size, "mod_time": f.ModTime, "tags": tags, "attributes": f.Attributes,
-		"local_path": f.LocalPath, "encryption_key": f.EncryptionKey})
+	_, err := s.DB.Exec(INSERT_FILE, sqlx.Args{"id": f.ID, "safeID": s.ID, "name": f.Name, "dir": f.Dir,
+		"creator": f.Creator, "groupName": f.GroupName, "tags": tags, "localPath": f.LocalCopy,
+		"encryptionKey": f.EncryptionKey, "modTime": f.ModTime, "size": f.Size, "attributes": f.Attributes})
 	return err
 }
 
@@ -165,7 +176,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		query += " ORDER BY " + orderBy
 	}
 
-	rows, err := s.Db.QueryExt(GET_FILES_BY_DIR, query, args)
+	rows, err := s.DB.QueryExt(GET_FILES_BY_DIR, query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +185,8 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 	for rows.Next() {
 		var f File
 		var tags string
-		err := rows.Scan(&f.Id, &f.Name, &f.Dir, &f.GroupName, &tags, &f.ModTime, &f.Size, &f.Creator,
-			&f.Attributes, &f.LocalPath, &f.EncryptionKey)
+		err := rows.Scan(&f.ID, &f.Name, &f.Dir, &f.GroupName, &tags, &f.ModTime, &f.Size, &f.Creator,
+			&f.Attributes, &f.LocalCopy, &f.EncryptionKey)
 		if err != nil {
 			return nil, err
 		}

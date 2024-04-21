@@ -2,6 +2,7 @@ package sqlx
 
 import (
 	"database/sql"
+	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -27,6 +28,9 @@ var Default *DB
 
 var MemoryDB = ":memory:"
 
+//go:embed ddl1_0.sql
+var ddl1_0 string
+
 func Open(dbPath string) (*DB, error) {
 	if dbPath != MemoryDB {
 		_, err := os.Stat(dbPath)
@@ -45,12 +49,19 @@ func Open(dbPath string) (*DB, error) {
 	if core.IsErr(err, "cannot open SQLite db in %s: %v", dbPath, err) {
 		return nil, err
 	}
-	return &DB{DbPath: dbPath,
+
+	d := &DB{DbPath: dbPath,
 		Db:       db,
 		versions: map[string]float32{},
 		queries:  map[string]string{},
 		stmts:    map[string]*sql.Stmt{},
-	}, nil
+	}
+
+	err = d.Define(1.0, ddl1_0)
+	if core.IsErr(err, "cannot define SQLite db in %s: %v", dbPath, err) {
+		return nil, err
+	}
+	return d, nil
 }
 
 func (db *DB) Close() error {
@@ -80,11 +91,6 @@ func NewTestDB(t *testing.T, persistent bool) *DB {
 	if err != nil {
 		panic(err)
 	}
-	data, err := os.ReadFile("../db.sql")
-	core.TestErr(t, err, "cannot read dll: %v")
-	dll := string(data)
-
-	err = db.Define(1.0, dll)
 	core.TestErr(t, err, "invalid dll: %v")
 
 	return db

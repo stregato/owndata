@@ -74,5 +74,7 @@ var mountCmd = &assist.Command{
 }
 
 func init() {
-	Root.AddCommand(mountCmd)
+	if runtime.GOOS == "linux" {
+		Root.AddCommand(mountCmd)
+	}
 }

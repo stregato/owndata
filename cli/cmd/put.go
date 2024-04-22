@@ -67,5 +67,5 @@ var putCmd = &assist.Command{
 }
 
 func init() {
-	Root.AddCommand(putCmd)
+	filesCmd.AddCommand(putCmd)
 }

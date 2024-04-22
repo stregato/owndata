@@ -35,5 +35,5 @@ var moreCmd = &assist.Command{
 }
 
 func init() {
-	Root.AddCommand(moreCmd)
+	filesCmd.AddCommand(moreCmd)
 }

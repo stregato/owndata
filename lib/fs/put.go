@@ -26,11 +26,11 @@ func (fs *FS) PutData(dest string, src []byte, options PutOptions) (File, error)
 
 	if options.Async {
 		_, err = fs.S.DB.Exec("INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
-			"localPath": "", "operation": "put", "file": file, "data": src, "deleteSrc": options.DeleteSrc})
+			"operation": "put", "file": file, "data": src, "localCopy": "", "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
 		}
-		triggerUpload <- file.ID
+		triggerAsync <- file.ID
 		return file, nil
 	}
 	err = fs.putSync(file, "", src, options.DeleteSrc)
@@ -55,11 +55,11 @@ func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error)
 
 	if options.Async {
 		_, err = fs.S.DB.Exec("INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
-			"localPath": src, "operation": "put", "file": file, "data": nil, "deleteSrc": options.DeleteSrc})
+			"operation": "put", "file": file, "data": nil, "localCopy": src, "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
 		}
-		triggerUpload <- file.ID
+		triggerAsync <- file.ID
 
 		return file, nil
 	}

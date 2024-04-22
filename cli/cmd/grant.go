@@ -21,7 +21,6 @@ var grantCmd = &assist.Command{
 			return err
 		}
 		defer s.Close()
-
 		groups, err := s.UpdateGroup(safe.UserGroup, safe.Grant, userId)
 		if err != nil {
 			return err

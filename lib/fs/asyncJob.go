@@ -8,7 +8,7 @@ import (
 	"github.com/stregato/mio/lib/sqlx"
 )
 
-var triggerUpload = make(chan string, 16)
+var triggerAsync = make(chan string, 16)
 var uploadLock sync.Mutex
 var activeUploads = make(map[*FS]*time.Timer)
 
@@ -44,19 +44,19 @@ func (fs *FS) startUploadJob() {
 					file      File
 					data      []byte
 					deleteSrc bool
-					localPath string
+					localCopy string
 					operation string
 				)
-				err := rows.Scan(&id, &file, &data, &deleteSrc, &localPath, &operation)
+				err := rows.Scan(&id, &file, &data, &deleteSrc, &localCopy, &operation)
 				if err != nil {
 					core.Info("cannot scan file async: %v", err)
 					continue
 				}
 				switch operation {
 				case "put":
-					err = fs.putSync(file, localPath, data, deleteSrc)
+					err = fs.putSync(file, localCopy, data, deleteSrc)
 				case "get":
-					err = fs.getSync(file, localPath, deleteSrc)
+					err = fs.getSync(file, localCopy, nil)
 				}
 				if err != nil {
 					core.Info("cannot put file async: %v", err)
@@ -65,26 +65,26 @@ func (fs *FS) startUploadJob() {
 				cleanup = append(cleanup, file.ID)
 			}
 			rows.Close()
-		case id := <-triggerUpload:
+		case id := <-triggerAsync:
 			var (
 				file      File
 				data      []byte
 				deleteSrc bool
-				src       string
+				localCopy string
 				operation string
 			)
 			uploadLock.Lock()
 			err := fs.S.DB.QueryRow("GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID},
-				&file, &data, &deleteSrc, &src, &operation)
+				&file, &data, &deleteSrc, &localCopy, &operation)
 			if err != nil {
 				core.Info("cannot get file async: %v", err)
 				continue
 			}
 			switch operation {
 			case "put":
-				err = fs.putSync(file, data, deleteSrc)
+				err = fs.putSync(file, localCopy, data, deleteSrc)
 			case "get":
-				err = fs.getSync(file, src, deleteSrc)
+				err = fs.getSync(file, localCopy, nil)
 			}
 			if err != nil {
 				core.Info("cannot put file async: %v", err)

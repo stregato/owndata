@@ -98,5 +98,5 @@ var listenCmd = &assist.Command{
 }
 
 func init() {
-	Root.AddCommand(listenCmd)
+	chatCmd.AddCommand(listenCmd)
 }

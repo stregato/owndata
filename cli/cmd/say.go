@@ -70,5 +70,5 @@ var sayCmd = &assist.Command{
 }
 
 func init() {
-	Root.AddCommand(sayCmd)
+	chatCmd.AddCommand(sayCmd)
 }

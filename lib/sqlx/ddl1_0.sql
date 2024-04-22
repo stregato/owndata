@@ -77,7 +77,7 @@ SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encr
     LIMIT CASE WHEN :limit = 0 THEN -1 ELSE :limit END OFFSET :offset
 
 -- GET_FILE_BY_NAME
-SELECT id,size,encryptionKey FROM mio_files 
+SELECT  id,dir,groupName,tags,modTime,size,creator,attributes,localPath,encryptionKey  FROM mio_files 
     WHERE safeID=:safeID AND dir=:dir AND name=:name
 
 -- GET_GROUP_NAME 
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS mio_file_async (
     safeID      VARCHAR(256)    NOT NULL,
     id          VARCHAR(256)    NOT NULL,
     deleteSrc   INTEGER         NOT NULL,
-    localPath   VARCHAR(4096)   NOT NULL,
+    localCopy   VARCHAR(4096)   NOT NULL,
     operation   VARCHAR(0)      NOT NULL,
     file        BLOB NOT        NULL,
     data        BLOB,
@@ -96,14 +96,14 @@ CREATE TABLE IF NOT EXISTS mio_file_async (
 );
 
 -- INSERT_FILE_ASYNC
-INSERT INTO mio_file_async(safeID,id,deleteSrc,localPath,operation,file,data) 
-    VALUES(:safeID,:id,:deleteSrc,:localPath,:operation,:file,:data)
+INSERT INTO mio_file_async(safeID,id,deleteSrc,localCopy,operation,file,data) 
+    VALUES(:safeID,:id,:deleteSrc,:localCopy,:operation,:file,:data)
 
 -- GET_FILE_ASYNC
-SELECT file,data, deleteSrc, localPath, operation FROM mio_file_async WHERE safeID=:safeID AND id=:id
+SELECT file,data, deleteSrc, localCopy, operation FROM mio_file_async WHERE safeID=:safeID AND id=:id
 
 -- GET_FILES_ASYNC
-SELECT id,file,data, deleteSrc, localPath, operation FROM mio_file_async WHERE safeID=:safeID
+SELECT id,file,data, deleteSrc, localCopy, operation FROM mio_file_async WHERE safeID=:safeID
 
 -- DEL_FILE_ASYNC
 DELETE FROM mio_file_async WHERE safeID=:safeID AND id=:id

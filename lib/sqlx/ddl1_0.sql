@@ -67,13 +67,13 @@ SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encr
     WHERE dir=:dir AND safeID=:safeID
     AND (:name = '' OR name = :name)
     AND (:groupName = '' OR groupName = :groupName)
-    AND (:tag = '' OR tag LIKE '% ' || :tag || ' %')
+    AND (:tag = '' OR tags LIKE '% ' || :tag || ' %')
     AND (:creator = '' OR creator = :creator)
     AND (:before < 0 OR modTime < :before)
     AND (:after < 0 OR modTime > :after)
     AND (:prefix = '' OR name LIKE :prefix || '%')
     AND (:suffix = '' OR name LIKE '%' || :suffix)
-    #ORDER_BY
+    #orderBy
     LIMIT CASE WHEN :limit = 0 THEN -1 ELSE :limit END OFFSET :offset
 
 -- GET_FILE_BY_NAME

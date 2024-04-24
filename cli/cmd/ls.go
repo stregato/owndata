@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"strconv"
+
 	"github.com/stregato/mio/cli/assist"
+	"github.com/stregato/mio/cli/styles"
 	"github.com/stregato/mio/lib/fs"
 )
 
@@ -34,7 +37,8 @@ func lsRun(params map[string]string) error {
 	}
 
 	for _, file := range files {
-		println(file.Name)
+		println(styles.UseStyle.Render(file.Name), styles.ShortStyle.Render(strconv.Itoa(file.Size)),
+			styles.ShortStyle.Render(file.Creator.Nick()), styles.ShortStyle.Render(file.ModTime.String()))
 	}
 
 	return nil

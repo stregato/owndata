@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/rand"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -119,6 +120,10 @@ func readHeader(s *safe.Safe, dir, name string) (File, error) {
 
 func syncHeaders(s *safe.Safe, dir string) error {
 	ls, err := s.Store.ReadDir(path.Join(HeadersDir, hashDir(dir)), storage.Filter{})
+	if os.IsNotExist(err) {
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
@@ -168,15 +173,17 @@ const GET_FILES_BY_DIR = "GET_FILES_BY_DIR"
 
 func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suffix, tag string, orderBy string,
 	limit, offset int) ([]File, error) {
-	var query string
-	args := sqlx.Args{"dir": dir, "after": after, "before": before, "limit": limit, "offset": offset,
-		"prefix": prefix, "suffix": suffix, "tag": tag}
+	args := sqlx.Args{"dir": dir, "safeID": s.ID, "name": "", "groupName": "", "tag": tag, "creator": "",
+		"before": before.UnixNano(), "after": after.UnixNano(), "prefix": prefix, "suffix": suffix,
+		"limit": limit, "offset": offset}
 
 	if orderBy != "" {
-		query += " ORDER BY " + orderBy
+		args["#orderBy"] = " ORDER BY "
+	} else {
+		args["#orderBy"] = ""
 	}
 
-	rows, err := s.DB.QueryExt(GET_FILES_BY_DIR, query, args)
+	rows, err := s.DB.Query(GET_FILES_BY_DIR, args)
 	if err != nil {
 		return nil, err
 	}

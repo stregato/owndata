@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"net/url"
 	"os"
-	"path"
-	"path/filepath"
 	"runtime"
 
 	"github.com/stregato/mio/cli/assist"
@@ -29,25 +26,6 @@ func getDesktopFolder() (string, error) {
 	}
 }
 
-func pathMatch(c *assist.Command, arg string, params map[string]string) (string, error) {
-	u, _ := url.Parse(params["safe"])
-
-	if arg == "" {
-		desktopFolder, err := getDesktopFolder()
-		if err != nil {
-			return "", err
-		}
-		arg = filepath.Join(desktopFolder, path.Base(u.Path))
-	}
-	return arg, nil
-}
-
-var pathParam = assist.Param{
-	Use:   "path",
-	Short: "The path to mount the safe on",
-	Match: pathMatch,
-}
-
 func mountRun(params map[string]string) error {
 	url := params["safe"]
 	path := params["path"]
@@ -69,7 +47,7 @@ func mountRun(params map[string]string) error {
 var mountCmd = &assist.Command{
 	Use:    "mount",
 	Short:  "Mount a safe on the local filesystem",
-	Params: []assist.Param{safeParam, pathParam},
+	Params: []assist.Param{safeParam, mountParam},
 	Run:    mountRun,
 }
 

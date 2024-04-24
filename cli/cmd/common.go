@@ -130,7 +130,6 @@ func completeSafe(_ *assist.Command, arg string, _ map[string]string) {
 			}
 		}
 	}
-
 }
 
 var safeParam = assist.Param{
@@ -164,7 +163,7 @@ var userParam = assist.Param{
 	Match: matchUser,
 }
 
-func matchExisting(c *assist.Command, arg string, params map[string]string) (string, error) {
+func matchExistingUser(c *assist.Command, arg string, params map[string]string) (string, error) {
 	s, err := safe.Open(DB, Identity, params["safe"])
 	if err != nil {
 		return "", err
@@ -190,7 +189,7 @@ func matchExisting(c *assist.Command, arg string, params map[string]string) (str
 	return arg, nil
 }
 
-func completeExisting(_ *assist.Command, arg string, params map[string]string) {
+func completeExistingUser(_ *assist.Command, arg string, params map[string]string) {
 	s, err := safe.Open(DB, Identity, params["safe"])
 	if err != nil {
 		return
@@ -212,8 +211,61 @@ func completeExisting(_ *assist.Command, arg string, params map[string]string) {
 var existingParam = assist.Param{
 	Use:      "existing",
 	Short:    "The id of an existing user",
-	Match:    matchExisting,
-	Complete: completeExisting,
+	Match:    matchExistingUser,
+	Complete: completeExistingUser,
+}
+
+func safePathMatch(c *assist.Command, arg string, params map[string]string) (string, error) {
+	safeName, dir := arg, ""
+	if firstSlash := strings.Index(arg, "/"); firstSlash > 0 {
+		safeName = arg[:firstSlash]
+		dir = arg[firstSlash+1:]
+	}
+
+	safeName, err := safeMatch(c, safeName, params)
+	if err != nil {
+		return "", err
+	}
+
+	s, err := getSafeByNameOrUrl(safeName)
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		ls, err := s.ListDir(dir, safe.ListOptions{})
+		if err != nil {
+			return "", err
+		}
+		dirs := core.Apply(ls, func(f safe.File) (string, bool) {
+			if f.IsDir() {
+				return f.Name(), true
+			}
+			return "", false
+		})
+		dirs = append([]string{"✔", "◄"}, dirs...)
+
+		var d string
+		err = survey.AskOne(&survey.Select{Message: "Select a directory", Options: dirs}, &d)
+		if err != nil {
+			return "", err
+		}
+		switch d {
+		case "✔":
+			break
+		case "◄":
+			dir, _ = path.Split(dir)
+		default:
+			dir = path.Join(dir, d)
+	}
+
+	return path.Join(safeName, dir), nil
+}
+
+var safePathParam = assist.Param{
+	Use:   "safePath",
+	Short: "A path in the safe",
+	Match: safePathMatch,
 }
 
 func printGroups(groups safe.Groups) {

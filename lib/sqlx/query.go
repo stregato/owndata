@@ -20,6 +20,10 @@ func convert(m Args) ([]any, error) {
 	var args []any
 
 	for k, v := range m {
+		if strings.HasPrefix(k, "#") {
+			continue
+		}
+
 		var c any
 		switch v := v.(type) {
 		case time.Time:
@@ -96,34 +100,35 @@ func (db *DB) Query(key string, m Args) (Rows, error) {
 		return Rows{}, err
 	}
 	stmt := db.getStatement(key, m)
+
 	rows, err := stmt.Query(args...)
 	db.trace(key, m, err)
 	return Rows{rows: rows}, err
 }
 
-func (db *DB) QueryExt(key, sql string, m Args) (Rows, error) {
-	args, err := convert(m)
-	if err != nil {
-		return Rows{}, err
-	}
-	basic, ok := db.queries[key]
-	if !ok {
-		return Rows{}, core.Errorf("DbNoKey: missing query %s", key)
-	}
-	q := basic + " " + sql
-	stmt, ok := db.stmts[q]
-	if !ok {
-		stmt, err = db.Db.Prepare(q)
-		if err != nil {
-			return Rows{}, core.Errorf("DbPrepare: cannot prepare query %s: %v", q, err)
-		}
-		db.stmts[q] = stmt
-		core.Info("SQL statement compiled: '%s' '%s'\n", key, q)
-	}
-	rows, err := stmt.Query(args...)
-	db.trace(key, m, err)
-	return Rows{rows: rows}, err
-}
+// func (db *DB) QueryExt(key, sql string, m Args) (Rows, error) {
+// 	args, err := convert(m)
+// 	if err != nil {
+// 		return Rows{}, err
+// 	}
+// 	basic, ok := db.queries[key]
+// 	if !ok {
+// 		return Rows{}, core.Errorf("DbNoKey: missing query %s", key)
+// 	}
+// 	q := basic + " " + sql
+// 	stmt, ok := db.stmts[q]
+// 	if !ok {
+// 		stmt, err = db.Db.Prepare(q)
+// 		if err != nil {
+// 			return Rows{}, core.Errorf("DbPrepare: cannot prepare query %s: %v", q, err)
+// 		}
+// 		db.stmts[q] = stmt
+// 		core.Info("SQL statement compiled: '%s' '%s'\n", key, q)
+// 	}
+// 	rows, err := stmt.Query(args...)
+// 	db.trace(key, m, err)
+// 	return Rows{rows: rows}, err
+// }
 
 func Map(v any) Args {
 	args := Args{}

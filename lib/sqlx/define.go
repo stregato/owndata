@@ -98,10 +98,12 @@ func (db *DB) getStatement(key string, args Args) *sql.Stmt {
 		}
 
 		stmt, err := db.Db.Prepare(s)
-		if err == nil {
-			db.stmts[s] = stmt
-			return stmt
+		if err != nil {
+			logrus.Panicf("cannot compile SQL statement for key '%s': %v", key, err)
+			panic(key)
 		}
+		db.stmts[s] = stmt
+		return stmt
 	}
 
 	logrus.Panicf("unknown SQL statement for key '%s'", key)
@@ -115,15 +117,14 @@ func replaceArgs(s string, args Args) string {
 
 	// Use the ReplaceAllStringFunc method to replace matches using a custom function
 	result := re.ReplaceAllStringFunc(s, func(match string) string {
-		// Remove the '#' prefix to find the matching key in the map
-		key := match[1:]
 		// Look up the key in the map. If found, return its value; otherwise, return the match unchanged.
-		if val, ok := args[key]; ok {
+		if val, ok := args[match]; ok {
 			if ss, ok := val.(string); ok {
 				return ss
 			}
 		}
 		return match
 	})
+
 	return result
 }

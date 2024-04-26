@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/safe"
@@ -25,7 +26,7 @@ func (fs *FS) PutData(dest string, src []byte, options PutOptions) (File, error)
 	}
 
 	if options.Async {
-		_, err = fs.S.DB.Exec("INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
+		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
 			"operation": "put", "file": file, "data": src, "localCopy": "", "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
@@ -54,7 +55,7 @@ func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error)
 	file.LocalCopy = src
 
 	if options.Async {
-		_, err = fs.S.DB.Exec("INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
+		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
 			"operation": "put", "file": file, "data": nil, "localCopy": src, "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
@@ -144,7 +145,7 @@ func (fs *FS) putSync(file File, localPath string, data []byte, deleteSrc bool) 
 func (fs *FS) calculateGroup(dir string) (safe.GroupName, error) {
 	var groupName safe.GroupName
 	for {
-		err := fs.S.DB.QueryRow(GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
+		err := fs.S.DB.QueryRow(MIO_GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
 		if err != sqlx.ErrNoRows && err != nil {
 			return "", err
 		}
@@ -154,7 +155,12 @@ func (fs *FS) calculateGroup(dir string) (safe.GroupName, error) {
 		if dir == "" {
 			return safe.UserGroup, nil
 		}
-		dir = path.Dir(dir)
+		index := strings.LastIndex(dir, "/")
+		if index == -1 {
+			dir = ""
+		} else {
+			dir = dir[:index]
+		}
 	}
 }
 

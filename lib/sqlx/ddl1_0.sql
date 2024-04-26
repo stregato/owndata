@@ -8,38 +8,39 @@ CREATE TABLE IF NOT EXISTS mio_configs (
     CONSTRAINT pk_safe_key PRIMARY KEY(node,k)
 );
 
--- GET_CONFIG
+-- MIO_GET_CONFIG
 SELECT s, i, b FROM mio_configs WHERE node=:node AND k=:key
 
--- SET_CONFIG
+-- MIO_SET_CONFIG
 INSERT INTO mio_configs(node,k,s,i,b) VALUES(:node,:key,:s,:i,:b)
 	ON CONFLICT(node,k) DO UPDATE SET s=:s,i=:i,b=:b
 	WHERE node=:node AND k=:key
 
--- DEL_CONFIG
+-- MIO_DEL_CONFIG
 DELETE FROM mio_configs WHERE node=:node
 
--- LIST_CONFIG
+-- MIO_LIST_CONFIG
 SELECT k FROM mio_configs WHERE node=:node
 
 -- INIT
 CREATE TABLE IF NOT EXISTS mio_files (
-    id VARCHAR(256) PRIMARY KEY,
-    safeID      VARCHAR(256),
-    name        VARCHAR(256),
-    dir         VARCHAR(4096),
-    creator     VARCHAR(256),
-    groupName   VARCHAR(256),
-    tags        VARCHAR(4096),
-    localPath   VARCHAR(4096),
-    encryptionKey VARCHAR(256),
-    modTime     INTEGER,
-    size        INTEGER,
-    attributes  BLOB
+    safeID          VARCHAR(256)    NOT NULL,
+    name            VARCHAR(256)    NOT NULL,
+    dir             VARCHAR(4096)   NOT NULL,
+    id              INTEGER         NOT NULL,
+    creator         VARCHAR(256)    NOT NULL,
+    groupName       VARCHAR(256)    NOT NULL,
+    tags            VARCHAR(4096)   NOT NULL,
+    localPath       VARCHAR(4096)   NOT NULL,
+    encryptionKey   VARCHAR(256)    NOT NULL,
+    modTime         INTEGER         NOT NULL,
+    size            INTEGER         NOT NULL,
+    attributes      BLOB,
+    PRIMARY KEY(safeID, name, dir, id)
 );
 
 -- INIT
-CREATE INDEX IF NOT EXISTS idx_mio_files_dir ON mio_files(dir)
+CREATE INDEX IF NOT EXISTS idx_mio_files_id ON mio_files(id)
 
 -- INIT
 CREATE INDEX IF NOT EXISTS idx_mio_files_groupName ON mio_files(groupName)
@@ -53,16 +54,21 @@ CREATE INDEX IF NOT EXISTS idx_mio_files_modTime ON mio_files(modTime)
 -- INIT
 CREATE INDEX IF NOT EXISTS idx_mio_files_name ON mio_files(name)
 
--- INSERT_FILE
-INSERT INTO mio_files(id,safeID,name,dir,creator,groupName,tags,localPath,encryptionKey,modTime,size,attributes) 
-    VALUES(:id,:safeID,:name,:dir,:creator,:groupName,:tags,:localPath,:encryptionKey,:modTime,:size,:attributes)
-    ON CONFLICT(id) DO UPDATE SET safeID=:safeID,name=:name,dir=:dir,creator=:creator,groupName=:groupName,tags=:tags,localPath=:localPath,encryptionKey=:encryptionKey,modTime=:modTime,size=:size,attributes=:attributes
-    WHERE id=:id
+-- MIO_STORE_FILE
+INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,localPath,encryptionKey,modTime,size,attributes) 
+    VALUES(:safeID,:name,:dir,:id,:creator,:groupName,:tags,:localPath,:encryptionKey,:modTime,:size,:attributes)
+    ON CONFLICT(safeID,name,dir,id) DO UPDATE SET creator=:creator,groupName=:groupName,tags=:tags,localPath=:localPath,encryptionKey=:encryptionKey,modTime=:modTime,size=:size,attributes=:attributes
+    WHERE id=:id AND safeID=:safeID AND name=:name AND dir=:dir
 
--- GET_LAST_ID
+-- MIO_STORE_DIR
+INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,localPath,encryptionKey,modTime,size) 
+    VALUES(:safeID,:name,:dir,'','','','','','',0,0)
+    ON CONFLICT(safeID,name,dir,id) DO NOTHING
+
+-- MIO_GET_LAST_ID
 SELECT id FROM mio_files WHERE dir=:dir ORDER BY id DESC LIMIT 1
 
--- GET_FILES_BY_DIR
+-- MIO_GET_FILES_BY_DIR
 SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encryptionKey FROM mio_files 
     WHERE dir=:dir AND safeID=:safeID
     AND (:name = '' OR name = :name)
@@ -76,11 +82,11 @@ SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encr
     #orderBy
     LIMIT CASE WHEN :limit = 0 THEN -1 ELSE :limit END OFFSET :offset
 
--- GET_FILE_BY_NAME
+-- MIO_GET_FILE_BY_NAME
 SELECT  id,dir,groupName,tags,modTime,size,creator,attributes,localPath,encryptionKey  FROM mio_files 
     WHERE safeID=:safeID AND dir=:dir AND name=:name
 
--- GET_GROUP_NAME 
+-- MIO_GET_GROUP_NAME 
 SELECT DISTINCT groupName FROM mio_files WHERE safeID=:safeID AND dir = :dir AND name = :name 
 
 -- INIT
@@ -95,17 +101,17 @@ CREATE TABLE IF NOT EXISTS mio_file_async (
     CONSTRAINT pk_mio_file_async PRIMARY KEY(safeID,id)
 );
 
--- INSERT_FILE_ASYNC
+-- MIO_INSERT_FILE_ASYNC
 INSERT INTO mio_file_async(safeID,id,deleteSrc,localCopy,operation,file,data) 
     VALUES(:safeID,:id,:deleteSrc,:localCopy,:operation,:file,:data)
 
--- GET_FILE_ASYNC
+-- MIO_GET_FILE_ASYNC
 SELECT file,data, deleteSrc, localCopy, operation FROM mio_file_async WHERE safeID=:safeID AND id=:id
 
--- GET_FILES_ASYNC
+-- MIO_GET_FILES_ASYNC
 SELECT id,file,data, deleteSrc, localCopy, operation FROM mio_file_async WHERE safeID=:safeID
 
--- DEL_FILE_ASYNC
+-- MIO_DEL_FILE_ASYNC
 DELETE FROM mio_file_async WHERE safeID=:safeID AND id=:id
 
 -- INIT

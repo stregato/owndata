@@ -14,7 +14,7 @@ var revokeCmd = &assist.Command{
 	Run: func(params map[string]string) error {
 		userId, _ := security.NewUserId(params["user"])
 
-		s, err := getSafeByNameOrUrl(params["safe"])
+		s, err := getSafeByName(params["safe"])
 		if err != nil {
 			return err
 		}

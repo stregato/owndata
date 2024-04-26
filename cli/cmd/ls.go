@@ -8,22 +8,12 @@ import (
 	"github.com/stregato/mio/lib/fs"
 )
 
-var dirParam = assist.Param{
-	Use:   "dir",
-	Short: "The directory to list",
-	Match: func(c *assist.Command, arg string, params map[string]string) (string, error) {
-		return arg, nil
-	},
-}
-
 func lsRun(params map[string]string) error {
-	s, err := getSafeByNameOrUrl(params["safe"])
+	s, dir, err := getSafeAndPath(params["dir"])
 	if err != nil {
 		return err
 	}
 	defer s.Close()
-
-	dir := params["dir"]
 
 	f, err := fs.Open(s)
 	if err != nil {
@@ -36,20 +26,40 @@ func lsRun(params map[string]string) error {
 		return err
 	}
 
+	println(styles.ShortStyle.Render(params["dir"]))
 	for _, file := range files {
-		println(styles.UseStyle.Render(file.Name), styles.ShortStyle.Render(strconv.Itoa(file.Size)),
-			styles.ShortStyle.Render(file.Creator.Nick()), styles.ShortStyle.Render(file.ModTime.String()))
+		name := file.Name
+		if name == "" {
+			name = "."
+		}
+		creator := file.Creator.Nick()
+		if creator == "" {
+			creator = "-"
+		}
+		println(styles.UseStyle.Render(name), styles.ShortStyle.Render(strconv.Itoa(file.Size)),
+			styles.ShortStyle.Render(creator), styles.ShortStyle.Render(file.ModTime.String()))
 	}
 
 	return nil
+}
+
+var lsDirParam = assist.Param{
+	Use:   "dir",
+	Short: "The directory to list",
+	Complete: pathComplete(pathMatchOptions{
+		safePath: true,
+	}),
+	Match: pathMatch(pathMatchOptions{
+		msg:      "Select a directory",
+		safePath: true,
+	}),
 }
 
 var lsCmd = &assist.Command{
 	Use:   "ls",
 	Short: "List files in the folder",
 	Params: []assist.Param{
-		safeParam,
-		dirParam,
+		lsDirParam,
 	},
 	Run: lsRun,
 }

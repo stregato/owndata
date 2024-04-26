@@ -14,7 +14,7 @@ var (
 	ErrExists        = "ErrExist: filesystem already exists in %s"
 	DefaultGroupName = safe.GroupName("usr") // default group name
 
-	GET_GROUP_NAME = "GET_GROUP_NAME" // query to get group name
+	MIO_GET_GROUP_NAME = "MIO_GET_GROUP_NAME" // query to get group name
 )
 
 type FS struct {

@@ -177,7 +177,13 @@ func (rw *Rows) Scan(dest ...interface{}) (err error) {
 					*originalDest = time.Unix(timestamp/1e9, timestamp%1e9)
 				}(i, t)
 			}
-
+			if b, ok := dest[i].(*bool); ok {
+				var boolean bool
+				dest[i] = &boolean
+				defer func(index int, originalDest *bool) {
+					*originalDest = boolean
+				}(i, b)
+			}
 		case "BLOB", "TEXT":
 			if _, ok := dest[i].(*string); !ok {
 				var kind = reflect.TypeOf(dest[i]).Elem().Kind()
@@ -215,18 +221,21 @@ func scanRow(row *s.Row, dest ...interface{}) (err error) {
 		case *string, *[]byte, *int, *int8, *int16, *int32, *int64, *uint16, *uint32, *uint64, *uint8, *float32, *float64, *bool:
 			continue
 		default:
-			var data []byte
-			var originalDest = dest[i]
-			dest[i] = &data
-			defer func(index int, originalDest any) {
-				if len(data) > 0 {
-					err = msgpack.Unmarshal(data, originalDest)
-					if err != nil {
-						n := reflect.TypeOf(originalDest)
-						core.IsErr(err, "cannot convert binary to type %v: %v", n, err)
+			var kind = reflect.TypeOf(dest[i]).Elem().Kind()
+			if kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct {
+				var data []byte
+				var originalDest = dest[i]
+				dest[i] = &data
+				defer func(index int, originalDest any) {
+					if len(data) > 0 {
+						err = msgpack.Unmarshal(data, originalDest)
+						if err != nil {
+							n := reflect.TypeOf(originalDest)
+							core.IsErr(err, "cannot convert param %d binary to type %v: %v", i, n, err)
+						}
 					}
-				}
-			}(i, originalDest)
+				}(i, originalDest)
+			}
 		}
 	}
 

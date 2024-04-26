@@ -6,17 +6,19 @@ import (
 )
 
 func moreRun(args map[string]string) error {
-	s, err := getSafeByNameOrUrl(args["safe"])
+	s, src, err := getSafeAndPath(args["src"])
 	if err != nil {
 		return err
 	}
+	defer s.Close()
 
 	f, err := fs.Open(s)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	data, err := f.GetData(args["src"], fs.GetOptions{})
+	data, err := f.GetData(src, fs.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -24,12 +26,17 @@ func moreRun(args map[string]string) error {
 	return nil
 }
 
+var morePathParam = assist.Param{
+	Use:   "src",
+	Short: "The file to show",
+	//Match: safeFileMatch,
+}
+
 var moreCmd = &assist.Command{
 	Use:   "more",
 	Short: "Show the content of a file in the safe",
 	Params: []assist.Param{
-		safeParam,
-		srcParam,
+		morePathParam,
 	},
 	Run: moreRun,
 }

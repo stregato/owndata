@@ -41,7 +41,7 @@ func (f *FS) GetFile(src, dest string, options GetOptions) (File, error) {
 	}
 
 	if options.Async {
-		_, err = f.S.DB.Exec("INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
+		_, err = f.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
 			"operation": "get", "file": file, "data": nil, "localCopy": dest, "deleteSrc": false})
 		if err != nil {
 			return File{}, err
@@ -61,7 +61,7 @@ func (f *FS) getFileRecord(src string) (File, error) {
 	dir, name := path.Split(src)
 
 	var file File
-	err := f.S.DB.QueryRow("GET_FILE_BY_NAME", sqlx.Args{"safeID": f.S.ID, "dir": dir, "name": name},
+	err := f.S.DB.QueryRow("MIO_GET_FILE_BY_NAME", sqlx.Args{"safeID": f.S.ID, "dir": dir, "name": name},
 		&file.ID, &file.Dir, &file.GroupName, &file.Tags, &file.ModTime, &file.Size, &file.Creator, &file.Attributes, &file.LocalCopy, &file.EncryptionKey)
 	if err == sqlx.ErrNoRows {
 		return File{}, os.ErrNotExist

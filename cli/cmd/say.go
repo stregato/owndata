@@ -41,7 +41,7 @@ func writeMessage(p db.PulseDB, message string) error {
 func sayRun(args map[string]string) error {
 	message := args["message"]
 
-	s, err := getSafeByNameOrUrl(args["safe"])
+	s, err := getSafeByName(args["safe"])
 	if err != nil {
 		return err
 	}

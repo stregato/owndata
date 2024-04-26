@@ -6,7 +6,7 @@ import (
 )
 
 func getRun(args map[string]string) error {
-	s, err := getSafeByNameOrUrl(args["safe"])
+	s, err := getSafeByName(args["safe"])
 	if err != nil {
 		return err
 	}

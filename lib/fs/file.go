@@ -24,6 +24,7 @@ type File struct {
 	ID            string
 	Dir           string
 	Name          string
+	IsDir         bool
 	GroupName     safe.GroupName
 	Creator       security.ID
 	Size          int
@@ -131,7 +132,7 @@ func syncHeaders(s *safe.Safe, dir string) error {
 	var lastID string
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if r.Intn(10) == 0 {
-		err = s.DB.QueryRow("GET_LAST_ID", sqlx.Args{"safeID": s.ID}, &lastID)
+		err = s.DB.QueryRow("MIO_GET_LAST_ID", sqlx.Args{"safeID": s.ID}, &lastID)
 		if err != nil && err != sqlx.ErrNoRows {
 			return err
 		}
@@ -155,7 +156,7 @@ func syncHeaders(s *safe.Safe, dir string) error {
 	return nil
 }
 
-const INSERT_FILE = "INSERT_FILE"
+const MIO_STORE_FILE = "MIO_STORE_FILE"
 
 func writeFileToDB(s *safe.Safe, f File) error {
 	tags := fmt.Sprintf(" %s ", strings.Join(f.Tags.Slice(), " "))
@@ -163,13 +164,20 @@ func writeFileToDB(s *safe.Safe, f File) error {
 		return core.Errorf("ErrTags: tags too long: %d", len(tags))
 	}
 
-	_, err := s.DB.Exec(INSERT_FILE, sqlx.Args{"id": f.ID, "safeID": s.ID, "name": f.Name, "dir": f.Dir,
+	_, err := s.DB.Exec(MIO_STORE_FILE, sqlx.Args{"safeID": s.ID, "name": f.Name, "dir": f.Dir, "id": f.ID,
 		"creator": f.Creator, "groupName": f.GroupName, "tags": tags, "localPath": f.LocalCopy,
 		"encryptionKey": f.EncryptionKey, "modTime": f.ModTime, "size": f.Size, "attributes": f.Attributes})
+	if err != nil {
+		return err
+	}
+
+	dir, name := path.Split(f.Dir)
+	_, _ = s.DB.Exec("MIO_STORE_DIR", sqlx.Args{"safeID": s.ID, "dir": dir, "name": name})
+
 	return err
 }
 
-const GET_FILES_BY_DIR = "GET_FILES_BY_DIR"
+const MIO_GET_FILES_BY_DIR = "MIO_GET_FILES_BY_DIR"
 
 func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suffix, tag string, orderBy string,
 	limit, offset int) ([]File, error) {
@@ -183,7 +191,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		args["#orderBy"] = ""
 	}
 
-	rows, err := s.DB.Query(GET_FILES_BY_DIR, args)
+	rows, err := s.DB.Query(MIO_GET_FILES_BY_DIR, args)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +206,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 			return nil, err
 		}
 		f.Tags = core.NewSet(strings.Split(strings.TrimSpace(tags), " ")...)
+		f.IsDir = f.ID == ""
 		files = append(files, f)
 	}
 	return files, nil

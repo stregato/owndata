@@ -3,9 +3,11 @@ package assist
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/stregato/mio/cli/styles"
@@ -46,7 +48,7 @@ type Command struct {
 
 }
 
-func bashQuote(input string) string {
+func BashQuote(input string) string {
 	// Define the special characters that require the string to be quoted
 	specialChars := ` |&;()<>{}$*?!"'~#^\=` // Include backslash and both quotes for completeness
 
@@ -63,8 +65,15 @@ func bashQuote(input string) string {
 }
 
 func (c *Command) Execute() {
+
+	var oks = []string{"✅", "😊", "👍", "🉑"}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+repeat:
 	n := c
-	i := 0
+	i := 1
+
+	interactive := false
 	var args = append([]string{}, flag.Args()...)
 	var echo = filepath.Base(os.Args[0])
 	for {
@@ -88,12 +97,13 @@ func (c *Command) Execute() {
 			if i < len(args) {
 				filter = strings.ToLower(args[i])
 			}
-
+			println()
 			for _, s := range n.Subcommands {
 				if strings.HasPrefix(s.Use, filter) {
-					println(s.Use)
+					print(s.Use, "\t")
 				}
 			}
+
 			return
 		}
 
@@ -120,6 +130,7 @@ func (c *Command) Execute() {
 		// Add the selected subcommand to the arguments
 		args = append(args, strings.TrimRight(cmd, " "))
 		echo += " " + cmd
+		interactive = true
 	}
 
 	j := 0
@@ -151,7 +162,7 @@ func (c *Command) Execute() {
 		}
 		core.Info("matched arg %s with param %s, final value %s", v, p.Use, v)
 		params[p.Use] = v
-		echo += " " + bashQuote(v)
+		echo += " " + BashQuote(v)
 		// If the parameter is multiple and there are more arguments, try to match the next argument
 		if p.Multiple && i < len(args) {
 			continue
@@ -176,12 +187,17 @@ func (c *Command) Execute() {
 	if err != nil {
 		fmt.Println(styles.ErrorStyle.Render(err.Error()))
 		os.Exit(1)
+	} else {
+		println(oks[r.Intn(len(oks))])
 	}
 
 	if *Echo {
 		println("cmd: ", echo)
 	}
 
+	if interactive {
+		goto repeat
+	}
 }
 
 func findMatch(token string, commands []*Command) int {

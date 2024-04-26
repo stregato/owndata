@@ -35,7 +35,7 @@ func clearLines(lines int) {
 
 func listenRun(params map[string]string) error {
 
-	s, err := getSafeByNameOrUrl(params["safe"])
+	s, err := getSafeByName(params["safe"])
 	if err != nil {
 		return err
 	}

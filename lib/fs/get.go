@@ -98,5 +98,10 @@ func (f *FS) getSync(file File, localPath string, dest io.Writer) error {
 		return err
 	}
 
+	if localPath != "" {
+		f.S.DB.Exec("MIO_UPDATE_LOCALPATH", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
+			"localCopy": localPath, "copyTime": core.Now()})
+	}
+
 	return nil
 }

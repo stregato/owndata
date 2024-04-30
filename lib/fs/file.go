@@ -139,10 +139,11 @@ func syncHeaders(s *safe.Safe, dir string) error {
 	}
 
 	for _, l := range ls {
-		if l.Name() <= lastID {
+		name := l.Name()
+		if name <= lastID || strings.HasPrefix(name, ".") {
 			continue
 		}
-		f, err := readHeader(s, dir, l.Name())
+		f, err := readHeader(s, dir, name)
 		if err != nil {
 			log.Error("failed to read header %s/%s: %w", dir, l.Name(), err)
 			continue
@@ -165,8 +166,9 @@ func writeFileToDB(s *safe.Safe, f File) error {
 	}
 
 	_, err := s.DB.Exec(MIO_STORE_FILE, sqlx.Args{"safeID": s.ID, "name": f.Name, "dir": f.Dir, "id": f.ID,
-		"creator": f.Creator, "groupName": f.GroupName, "tags": tags, "localPath": f.LocalCopy,
-		"encryptionKey": f.EncryptionKey, "modTime": f.ModTime, "size": f.Size, "attributes": f.Attributes})
+		"creator": f.Creator, "groupName": f.GroupName, "tags": tags,
+		"encryptionKey": f.EncryptionKey, "modTime": f.ModTime, "size": f.Size,
+		"localCopy": f.LocalCopy, "copyTime": core.Now(), "attributes": f.Attributes})
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		var f File
 		var tags string
 		err := rows.Scan(&f.ID, &f.Name, &f.Dir, &f.GroupName, &tags, &f.ModTime, &f.Size, &f.Creator,
-			&f.Attributes, &f.LocalCopy, &f.EncryptionKey)
+			&f.Attributes, &f.LocalCopy, &f.CopyTime, &f.EncryptionKey)
 		if err != nil {
 			return nil, err
 		}

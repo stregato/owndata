@@ -31,10 +31,11 @@ CREATE TABLE IF NOT EXISTS mio_files (
     creator         VARCHAR(256)    NOT NULL,
     groupName       VARCHAR(256)    NOT NULL,
     tags            VARCHAR(4096)   NOT NULL,
-    localPath       VARCHAR(4096)   NOT NULL,
     encryptionKey   VARCHAR(256)    NOT NULL,
     modTime         INTEGER         NOT NULL,
     size            INTEGER         NOT NULL,
+    localCopy       VARCHAR(4096)   NOT NULL,
+    copyTime    INTEGER         NOT NULL,
     attributes      BLOB,
     PRIMARY KEY(safeID, name, dir, id)
 );
@@ -55,22 +56,28 @@ CREATE INDEX IF NOT EXISTS idx_mio_files_modTime ON mio_files(modTime)
 CREATE INDEX IF NOT EXISTS idx_mio_files_name ON mio_files(name)
 
 -- MIO_STORE_FILE
-INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,localPath,encryptionKey,modTime,size,attributes) 
-    VALUES(:safeID,:name,:dir,:id,:creator,:groupName,:tags,:localPath,:encryptionKey,:modTime,:size,:attributes)
-    ON CONFLICT(safeID,name,dir,id) DO UPDATE SET creator=:creator,groupName=:groupName,tags=:tags,localPath=:localPath,encryptionKey=:encryptionKey,modTime=:modTime,size=:size,attributes=:attributes
+INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,encryptionKey,modTime,size,localCopy, 
+    copyTime, attributes) VALUES(:safeID,:name,:dir,:id,:creator,:groupName,:tags,:encryptionKey,
+    :modTime,:size,:localCopy,:copyTime,:attributes) ON CONFLICT(safeID,name,dir,id) DO UPDATE
+    SET creator=:creator,groupName=:groupName,tags=:tags,encryptionKey=:encryptionKey,modTime=:modTime,
+    size=:size,localCopy=:localCopy,copyTime=:copyTime,attributes=:attributes
     WHERE id=:id AND safeID=:safeID AND name=:name AND dir=:dir
 
 -- MIO_STORE_DIR
-INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,localPath,encryptionKey,modTime,size) 
-    VALUES(:safeID,:name,:dir,'','','','','','',0,0)
+INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,encryptionKey,modTime,size,localCopy,copyTime)
+    VALUES(:safeID,:name,:dir,'','','','','',0,0,'',0)
     ON CONFLICT(safeID,name,dir,id) DO NOTHING
+
+-- MIO_UPDATE_LOCALCOPY
+UPDATE mio_files SET localCopy=:localCopy, copyTime=:copyTime 
+    WHERE safeID=:safeID AND name=:name AND dir=:dir AND id=:id
 
 -- MIO_GET_LAST_ID
 SELECT id FROM mio_files WHERE dir=:dir ORDER BY id DESC LIMIT 1
 
 -- MIO_GET_FILES_BY_DIR
-SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encryptionKey FROM mio_files 
-    WHERE dir=:dir AND safeID=:safeID
+SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localCopy,copyTime,encryptionKey 
+    FROM mio_files WHERE dir=:dir AND safeID=:safeID
     AND (:name = '' OR name = :name)
     AND (:groupName = '' OR groupName = :groupName)
     AND (:tag = '' OR tags LIKE '% ' || :tag || ' %')
@@ -83,8 +90,8 @@ SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localPath,encr
     LIMIT CASE WHEN :limit = 0 THEN -1 ELSE :limit END OFFSET :offset
 
 -- MIO_GET_FILE_BY_NAME
-SELECT  id,dir,groupName,tags,modTime,size,creator,attributes,localPath,encryptionKey  FROM mio_files 
-    WHERE safeID=:safeID AND dir=:dir AND name=:name
+SELECT  id,dir,groupName,tags,modTime,size,creator,attributes,localCopy,copyTime,encryptionKey  
+    FROM mio_files WHERE safeID=:safeID AND dir=:dir AND name=:name
 
 -- MIO_GET_GROUP_NAME 
 SELECT DISTINCT groupName FROM mio_files WHERE safeID=:safeID AND dir = :dir AND name = :name 

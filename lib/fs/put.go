@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/stregato/mio/lib/core"
@@ -52,7 +53,11 @@ func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error)
 	if err != nil {
 		return File{}, err
 	}
-	file.LocalCopy = src
+	localCopy, err := filepath.Abs(src)
+	if err != nil {
+		return File{}, err
+	}
+	file.LocalCopy = localCopy
 
 	if options.Async {
 		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,

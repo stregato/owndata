@@ -37,7 +37,8 @@ func lsRun(params map[string]string) error {
 			creator = "-"
 		}
 		println(styles.UseStyle.Render(name), styles.ShortStyle.Render(strconv.Itoa(file.Size)),
-			styles.ShortStyle.Render(creator), styles.ShortStyle.Render(file.ModTime.String()))
+			styles.ShortStyle.Render(creator), styles.ShortStyle.Render(file.ModTime.String()),
+			styles.ShortStyle.Render((file.LocalCopy)))
 	}
 
 	return nil

@@ -46,6 +46,7 @@ type Command struct {
 
 	Run func(args map[string]string) error // Run is the function to call when the command is executed.
 
+	Parent *Command // Parent is the parent command
 }
 
 func BashQuote(input string) string {
@@ -71,11 +72,17 @@ func (c *Command) Execute() {
 
 repeat:
 	n := c
-	i := 1
+	i := 0
 
 	interactive := false
 	var args = append([]string{}, flag.Args()...)
 	var echo = filepath.Base(os.Args[0])
+
+	// println()
+	// for _, a := range args {
+	// 	println("[", a, "]")
+	// }
+
 	for {
 		for ; i < len(args); i++ {
 			// Find the subcommand that matches the argument
@@ -97,10 +104,9 @@ repeat:
 			if i < len(args) {
 				filter = strings.ToLower(args[i])
 			}
-			println()
 			for _, s := range n.Subcommands {
 				if strings.HasPrefix(s.Use, filter) {
-					print(s.Use, "\t")
+					fmt.Println(s.Use, " ")
 				}
 			}
 
@@ -111,11 +117,25 @@ repeat:
 		options := core.Apply(n.Subcommands, func(c *Command) (string, bool) {
 			return c.Use, true
 		})
-		description := func(value string, index int) string {
-			c := n.Subcommands[index]
 
+		if n.Parent != nil {
+			options = append(options, "back")
+		} else {
+			options = append(options, "exit")
+		}
+		description := func(value string, index int) string {
+			if index >= len(n.Subcommands) {
+				switch value {
+				case "exit":
+					return "Exit the program"
+				case "back":
+					return "Go back to the previous command"
+				}
+			}
+			c := n.Subcommands[index]
 			return styles.ShortStyle.Render(c.Short)
 		}
+		interactive = true
 
 		// Ask the user to select a subcommand
 		err := survey.AskOne(&survey.Select{
@@ -127,10 +147,18 @@ repeat:
 			fmt.Println(styles.ErrorStyle.Render(err.Error()))
 			return
 		}
-		// Add the selected subcommand to the arguments
-		args = append(args, strings.TrimRight(cmd, " "))
-		echo += " " + cmd
-		interactive = true
+
+		switch cmd {
+		case "exit":
+			os.Exit(0)
+		case "back":
+			n = n.Parent
+			i--
+		default:
+			// Add the selected subcommand to the arguments
+			args = append(args, strings.TrimRight(cmd, " "))
+			echo += " " + cmd
+		}
 	}
 
 	j := 0
@@ -277,4 +305,5 @@ func (c *Command) printParams() {
 func (c *Command) AddCommand(cmd *Command) {
 	// Add the subcommand to the list of subcommands
 	c.Subcommands = append(c.Subcommands, cmd)
+	cmd.Parent = c
 }

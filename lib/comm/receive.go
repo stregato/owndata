@@ -1,14 +1,17 @@
 package comm
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/stregato/mio/lib/config"
 	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/security"
 	"github.com/stregato/mio/lib/storage"
+	"golang.org/x/crypto/blake2b"
 )
 
 func (c *Comm) Receive(filter string) ([]Message, error) {
@@ -28,10 +31,11 @@ func (c *Comm) Receive(filter string) ([]Message, error) {
 		}
 	}
 
-	lastId := ""
 	var messages []Message
 	for _, dest := range dests {
 		dir := path.Join(CommDir, dest)
+		lastId, _, _, _ := config.GetConfigValue(c.S.DB, "comm", fmt.Sprintf("lastId-%s-%s", c.S.ID, dest))
+
 		files, err := c.S.Store.ReadDir(dir, storage.Filter{AfterName: lastId})
 		if err != nil {
 			continue
@@ -47,6 +51,13 @@ func (c *Comm) Receive(filter string) ([]Message, error) {
 				continue
 			}
 			messages = append(messages, m)
+			if m.ID.String() > lastId {
+				lastId = m.ID.String()
+			}
+		}
+		err = config.SetConfigValue(c.S.DB, "comm", fmt.Sprintf("lastId-%s-%s", c.S.ID, dest), lastId, 0, nil)
+		if err != nil {
+			core.Errorf("cannot set lastId for %s: %s", dest, err)
 		}
 	}
 
@@ -60,7 +71,7 @@ func (c *Comm) receiveMessage(dest string, file fs.FileInfo) (Message, error) {
 		return Message{}, err
 	}
 
-	keys, err := c.getEncryptionKeys(dest)
+	keys, err := c.getEncryptionKeys(m.Sender, dest)
 	if err != nil {
 		return Message{}, err
 	}
@@ -106,7 +117,7 @@ func (c *Comm) DownloadFile(m Message, dest string) error {
 		return core.Errorf("no file to download")
 	}
 
-	keys, err := c.getEncryptionKeys(m.Sender.String())
+	keys, err := c.getEncryptionKeys(m.Sender, m.Recipient)
 	if err != nil {
 		return err
 	}
@@ -114,9 +125,17 @@ func (c *Comm) DownloadFile(m Message, dest string) error {
 		return nil
 	}
 	key := keys[m.EncryptionId]
+	iv := blake2b.Sum256([]byte(m.File))
 
 	file, err := os.Create(dest)
-	w, err := security.DecryptWriter(file, key[0:32], key[32:48])
+	if err != nil {
+		return err
+	}
+	w, err := security.DecryptWriter(file, key, iv[:16])
+	if err != nil {
+		return err
+	}
 
-	return c.S.Store.Read(dest, nil, w, nil)
+	source := path.Join(CommDir, m.Recipient, m.ID.String()+".data")
+	return c.S.Store.Read(source, nil, w, nil)
 }

@@ -17,9 +17,17 @@ func Open(s *safe.Safe) *Comm {
 	return &Comm{S: s}
 }
 
-func (c *Comm) getEncryptionKeys(dest string) (keys []safe.Key, err error) {
-	id, err := security.CastID(dest)
-	if err == nil {
+func (c *Comm) getEncryptionKeys(sender security.ID, dest string) (keys []safe.Key, err error) {
+	if len(dest) > 80 {
+		var id security.ID
+		if dest == c.S.Identity.Id.String() {
+			id = sender
+		} else {
+			id, err = security.CastID(dest)
+			if err != nil {
+				return nil, err
+			}
+		}
 		key, err := security.DiffieHellmanKey(c.S.Identity, id.String())
 		return []safe.Key{safe.Key(key)}, err
 	}

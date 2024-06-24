@@ -11,7 +11,7 @@ type MessageID uint64
 type Message struct {
 	Sender       security.ID
 	EncryptionId int
-	Dest         string
+	Recipient    string
 	ID           MessageID
 	Text         string
 	Data         []byte

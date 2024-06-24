@@ -48,7 +48,8 @@ func convert(m Args) ([]any, error) {
 }
 
 type Rows struct {
-	rows *s.Rows
+	rows        *s.Rows
+	columnTypes []*s.ColumnType
 }
 
 func (db *DB) trace(key string, m Args, err error) {
@@ -66,12 +67,19 @@ func (db *DB) Exec(key string, m Args) (s.Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := db.getStatement(key, m).Exec(args...)
+
+	stmt, err := db.getStatement(key, m)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := stmt.Exec(args...)
 	db.trace(key, m, err)
 	if core.IsErr(err, "cannot execute query: %v", err) {
 		return nil, err
 	}
 
+	res.RowsAffected()
 	return res, nil
 }
 
@@ -84,7 +92,13 @@ func (db *DB) QueryRow(key string, m Args, dest ...any) error {
 	if err != nil {
 		return err
 	}
-	row := db.getStatement(key, m).QueryRow(args...)
+
+	stmt, err := db.getStatement(key, m)
+	if err != nil {
+		return err
+	}
+
+	row := stmt.QueryRow(args...)
 	err = row.Err()
 	db.trace(key, m, err)
 	if err != s.ErrNoRows && core.IsErr(err, "cannot execute query: %v", err) {
@@ -99,11 +113,20 @@ func (db *DB) Query(key string, m Args) (Rows, error) {
 	if err != nil {
 		return Rows{}, err
 	}
-	stmt := db.getStatement(key, m)
+	stmt, err := db.getStatement(key, m)
+	if err != nil {
+		return Rows{}, err
+	}
 
 	rows, err := stmt.Query(args...)
 	db.trace(key, m, err)
-	return Rows{rows: rows}, err
+
+	columnsType, err := rows.ColumnTypes()
+	if err != nil {
+		rows.Close()
+		return Rows{}, err
+	}
+	return Rows{rows: rows, columnTypes: columnsType}, err
 }
 
 // func (db *DB) QueryExt(key, sql string, m Args) (Rows, error) {
@@ -162,12 +185,7 @@ func Map(v any) Args {
 }
 
 func (rw *Rows) Scan(dest ...interface{}) (err error) {
-	columnTypes, err := rw.rows.ColumnTypes()
-	if err != nil {
-		return err
-	}
-
-	for i, col := range columnTypes {
+	for i, col := range rw.columnTypes {
 		switch col.DatabaseTypeName() {
 		case "INTEGER", "INT": // Assuming the column is a Unix timestamp stored as INT
 			if t, ok := dest[i].(*time.Time); ok {
@@ -244,6 +262,26 @@ func scanRow(row *s.Row, dest ...interface{}) (err error) {
 
 func (rw *Rows) Next() bool {
 	return rw.rows.Next()
+}
+
+func (rw *Rows) NextRow() ([]any, error) {
+	if !rw.Next() {
+		rw.Close()
+		return nil, nil
+	}
+	values := make([]any, len(rw.columnTypes))
+	valuePtrs := make([]any, len(rw.columnTypes))
+
+	for i := range values {
+		valuePtrs[i] = &values[i]
+	}
+
+	err := rw.Scan(valuePtrs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return values, nil
 }
 
 func (rw *Rows) Close() error {

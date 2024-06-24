@@ -26,7 +26,7 @@ type Transaction struct {
 	Signature []byte         // Signature is the signature of the transaction
 }
 
-func (d *PulseDB) Commit() error {
+func (d *Database) commit() error {
 	if d.tx == nil {
 		return nil
 	}
@@ -85,11 +85,12 @@ func (d *PulseDB) Commit() error {
 		return err
 	}
 
+	d.tx = nil
 	d.Safe.Touch(DBDir)
 	return nil
 }
 
-func (d *PulseDB) Rollback() error {
+func (d *Database) Cancel() error {
 	d.tx = nil
 	d.log = nil
 	return d.tx.Rollback()

@@ -23,7 +23,7 @@ type Safe struct {
 	DB        *sqlx.DB
 	Store     storage.Store
 	Config    Config
-	CreatorId security.ID
+	CreatorID security.ID
 	Identity  *security.Identity
 	Lock      sync.RWMutex
 }

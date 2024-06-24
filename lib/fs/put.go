@@ -9,10 +9,12 @@ import (
 
 	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/safe"
+	"github.com/stregato/mio/lib/security"
 	"github.com/stregato/mio/lib/sqlx"
 )
 
 type PutOptions struct {
+	ID         FileID           // the ID of the file, used to overwrite an existing file
 	Async      bool             // put the file asynchronously
 	DeleteSrc  bool             // delete the source file after a successful put
 	GroupName  safe.GroupName   // the group name of the file. If empty, the group name is calculated from the directory
@@ -20,13 +22,14 @@ type PutOptions struct {
 	Attributes map[string]any   // the attributes of the file
 }
 
-func (fs *FS) PutData(dest string, src []byte, options PutOptions) (File, error) {
+func (fs *FileSystem) PutData(dest string, src []byte, options PutOptions) (File, error) {
 	file, err := fs.createHeader(dest, len(src), options)
 	if err != nil {
 		return File{}, err
 	}
 
 	if options.Async {
+		core.Info("putting file %s asynchronously", dest)
 		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
 			"operation": "put", "file": file, "data": src, "localCopy": "", "deleteSrc": options.DeleteSrc})
 		if err != nil {
@@ -43,7 +46,7 @@ func (fs *FS) PutData(dest string, src []byte, options PutOptions) (File, error)
 	return file, nil
 }
 
-func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error) {
+func (fs *FileSystem) PutFile(dest string, src string, options PutOptions) (File, error) {
 	stat, err := os.Stat(src)
 	if err != nil {
 		return File{}, err
@@ -60,6 +63,7 @@ func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error)
 	file.LocalCopy = localCopy
 
 	if options.Async {
+		core.Info("putting file %s asynchronously", dest)
 		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
 			"operation": "put", "file": file, "data": nil, "localCopy": src, "deleteSrc": options.DeleteSrc})
 		if err != nil {
@@ -77,9 +81,9 @@ func (fs *FS) PutFile(dest string, src string, options PutOptions) (File, error)
 	return file, nil
 }
 
-func (fs *FS) createHeader(dest string, size int, options PutOptions) (File, error) {
+func (fs *FileSystem) createHeader(dest string, size int, options PutOptions) (File, error) {
 	var err error
-	dir, name := path.Split(dest)
+	dir, name := core.SplitPath(dest)
 
 	// get the group name and the corresponding key
 	groupName := options.GroupName
@@ -90,8 +94,13 @@ func (fs *FS) createHeader(dest string, size int, options PutOptions) (File, err
 		}
 	}
 
+	id := options.ID
+	if id == 0 {
+		id = FileID(core.SnowID())
+	}
+
 	return File{
-		ID:            core.SnowIDString(),
+		ID:            id,
 		Dir:           dir,
 		Name:          name,
 		GroupName:     groupName,
@@ -104,14 +113,16 @@ func (fs *FS) createHeader(dest string, size int, options PutOptions) (File, err
 	}, nil
 }
 
-func (fs *FS) putSync(file File, localPath string, data []byte, deleteSrc bool) error {
+func (fs *FileSystem) putSync(file File, localPath string, data []byte, deleteSrc bool) error {
 	var err error
 	var src io.ReadSeeker
 
 	switch {
 	case data != nil:
+		core.Info("putting file %s from data", file.ID)
 		src = core.NewBytesReader(data)
 	case localPath != "":
+		core.Info("putting file %s from local file %s", file.ID, localPath)
 		f, err := os.Open(file.LocalCopy)
 		if err != nil {
 			return err
@@ -123,14 +134,14 @@ func (fs *FS) putSync(file File, localPath string, data []byte, deleteSrc bool) 
 	}
 
 	// write the body
-	err = writeBody(fs.S, path.Join(DataDir, file.ID), src, file.EncryptionKey)
+	err = writeBody(fs.S, path.Join(DataDir, file.ID.String()), src, file.EncryptionKey)
 	if err != nil {
 		return err
 	}
 
 	_, err = writeHeader(fs.S, file)
 	if err != nil {
-		fs.S.Store.Delete(path.Join(DataDir, file.ID))
+		fs.S.Store.Delete(path.Join(DataDir, file.ID.String()))
 		return err
 	}
 
@@ -142,12 +153,17 @@ func (fs *FS) putSync(file File, localPath string, data []byte, deleteSrc bool) 
 	if err != nil {
 		core.Info("failed to sync headers: %v", err)
 	}
-	fs.S.Touch(HeadersDir, hashDir(file.Dir))
+
+	dir := file.Dir
+	for dir != "" {
+		fs.S.Touch(HeadersDir, hashDir(dir))
+		dir = core.Dir(dir)
+	}
 
 	return nil
 }
 
-func (fs *FS) calculateGroup(dir string) (safe.GroupName, error) {
+func (fs *FileSystem) calculateGroup(dir string) (safe.GroupName, error) {
 	var groupName safe.GroupName
 	for {
 		err := fs.S.DB.QueryRow(MIO_GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
@@ -172,9 +188,10 @@ func (fs *FS) calculateGroup(dir string) (safe.GroupName, error) {
 func writeBody(s *safe.Safe, dest string, src io.ReadSeeker, key []byte) error {
 	aesKey := key[:32]
 	aesIV := key[32:]
-	r, err := encryptReader(src, aesKey, aesIV)
+	r, err := security.EncryptReader(src, aesKey, aesIV)
 	if err != nil {
 		return err
 	}
+	core.Info("writing body to %s", dest)
 	return s.Store.Write(dest, r, nil)
 }

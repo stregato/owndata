@@ -86,7 +86,7 @@ func safeMatch(c *assist.Command, arg string, params map[string]string) (string,
 	}
 }
 
-func completeSafe(_ *assist.Command, arg string, _ map[string]string) {
+func safeComplete(_ *assist.Command, arg string, _ map[string]string) {
 	safes, err := listSafes()
 	if err == nil {
 		for _, s := range safes {
@@ -101,16 +101,17 @@ var safeParam = assist.Param{
 	Use:      "safe",
 	Short:    "The safe to use",
 	Match:    safeMatch,
-	Complete: completeSafe,
+	Complete: safeComplete,
 }
 
 type pathMatchOptions struct {
 	msg      string
 	safePath bool
 	onlyDir  bool
+	onlyFile bool
 }
 
-func selectFile(file string, f *fs.FS, options pathMatchOptions) (string, error) {
+func selectFile(file string, f *fs.FileSystem, options pathMatchOptions) (string, error) {
 	if f == nil && file == "" {
 		file, _ = os.Getwd()
 	}
@@ -142,7 +143,7 @@ func selectFile(file string, f *fs.FS, options pathMatchOptions) (string, error)
 
 func pathMatch(options pathMatchOptions) func(_ *assist.Command, arg string, _ map[string]string) (string, error) {
 	return func(_ *assist.Command, arg string, _ map[string]string) (string, error) {
-		var f *fs.FS
+		var f *fs.FileSystem
 		var safeName, file string
 		var err error
 
@@ -184,7 +185,7 @@ func pathMatch(options pathMatchOptions) func(_ *assist.Command, arg string, _ m
 
 func pathComplete(options pathMatchOptions) func(_ *assist.Command, arg string, _ map[string]string) {
 	return func(_ *assist.Command, arg string, _ map[string]string) {
-		var f *fs.FS
+		var f *fs.FileSystem
 		var safeName string
 
 		if options.safePath {
@@ -192,25 +193,34 @@ func pathComplete(options pathMatchOptions) func(_ *assist.Command, arg string, 
 			if firstSlash := strings.Index(arg, "/"); firstSlash > 0 {
 				safeName = arg[:firstSlash]
 				arg = arg[firstSlash+1:]
-			} else {
-				sds, err := listSafes()
-				if err != nil {
-					return
-				}
-
-				for _, s := range sds {
-					if strings.Contains(s.name, arg) {
-						println(s.name + "/")
-					}
-				}
-				return
 			}
-
-			safeName, err := safeMatch(nil, safeName, nil)
+			sds, err := listSafes()
 			if err != nil {
 				return
 			}
 
+			candidates := []string{}
+			for _, s := range sds {
+				if s.name == safeName {
+					candidates = append(candidates, s.name)
+					break
+				}
+				if strings.Contains(s.name, arg) {
+					candidates = append(candidates, s.name)
+				}
+			}
+
+			switch len(candidates) {
+			case 0:
+				return
+			case 1:
+				safeName = candidates[0]
+			default:
+				for _, c := range candidates {
+					fmt.Println(c + "/")
+				}
+				return
+			}
 			s, err := getSafeByName(safeName)
 			if err != nil {
 				return
@@ -235,11 +245,14 @@ func pathComplete(options pathMatchOptions) func(_ *assist.Command, arg string, 
 				if options.onlyDir && !l.IsDir {
 					continue
 				}
+				if options.onlyFile && l.IsDir {
+					continue
+				}
 				if strings.HasPrefix(l.Name, arg) {
 					if l.IsDir {
-						println(assist.BashQuote(l.Name + "/"))
+						fmt.Println(assist.BashQuote(path.Join(safeName, l.Name) + "/"))
 					} else {
-						println(assist.BashQuote(l.Name))
+						fmt.Println(assist.BashQuote(path.Join(safeName, l.Name)))
 					}
 				}
 			}
@@ -253,9 +266,9 @@ func pathComplete(options pathMatchOptions) func(_ *assist.Command, arg string, 
 			}
 
 			if l.IsDir() {
-				println(assist.BashQuote(l.Name() + "/"))
+				fmt.Println(assist.BashQuote(l.Name() + "/"))
 			} else {
-				println(assist.BashQuote(l.Name()))
+				fmt.Println(assist.BashQuote(l.Name()))
 			}
 		}
 	}

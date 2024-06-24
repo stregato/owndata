@@ -8,7 +8,7 @@ import (
 	"github.com/stregato/mio/lib/core"
 )
 
-func DiffieHellmanKey(identity Identity, id string) ([]byte, error) {
+func DiffieHellmanKey(identity *Identity, id string) ([]byte, error) {
 	privateKey, _, err := DecodeKeys(identity.Private)
 	if core.IsErr(err, "cannot decode keys: %v") {
 		return nil, err

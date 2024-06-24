@@ -2,6 +2,8 @@ package fs
 
 import (
 	"time"
+
+	"github.com/stregato/mio/lib/core"
 )
 
 type ListOptions struct {
@@ -16,8 +18,9 @@ type ListOptions struct {
 	Tag     string    // Tag is a filter on the tag of the file
 }
 
-func (f *FS) List(dir string, options ListOptions) ([]File, error) {
+func (f *FileSystem) List(dir string, options ListOptions) ([]File, error) {
 	if f.S.IsUpdated(HeadersDir, hashDir(dir)) {
+		core.Info("syncing headers of %s", dir)
 		err := syncHeaders(f.S, dir)
 		if err != nil {
 			return nil, err

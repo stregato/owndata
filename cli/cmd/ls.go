@@ -49,6 +49,7 @@ var lsDirParam = assist.Param{
 	Short: "The directory to list",
 	Complete: pathComplete(pathMatchOptions{
 		safePath: true,
+		onlyDir:  true,
 	}),
 	Match: pathMatch(pathMatchOptions{
 		msg:      "Select a directory",

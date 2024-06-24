@@ -11,7 +11,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-func (d *PulseDB) processTransaction(dir, id string, keys []safe.Key) ([]Update, error) {
+func (d *Database) processTransaction(dir, id string, keys []safe.Key) ([]Update, error) {
 	var tx Transaction
 	var updates []Update
 
@@ -68,8 +68,16 @@ func (d *PulseDB) processTransaction(dir, id string, keys []safe.Key) ([]Update,
 	return updates, nil
 }
 
-func (d *PulseDB) Sync() ([]Update, error) {
-	if !d.Safe.IsUpdated(DBDir) {
+func (d *Database) Sync() ([]Update, error) {
+	err := d.commit()
+	if err != nil {
+		return nil, err
+	}
+	return d.sync(false)
+}
+
+func (d *Database) sync(force bool) ([]Update, error) {
+	if !force && !d.Safe.IsUpdated(DBDir) {
 		return nil, nil
 	}
 

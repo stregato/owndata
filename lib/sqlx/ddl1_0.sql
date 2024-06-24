@@ -65,7 +65,7 @@ INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,encryptionKey,mo
 
 -- MIO_STORE_DIR
 INSERT INTO mio_files(safeID,name,dir,id,creator,groupName,tags,encryptionKey,modTime,size,localCopy,copyTime)
-    VALUES(:safeID,:name,:dir,'','','','','',0,0,'',0)
+    VALUES(:safeID,:name,:dir,0,'','','','',0,0,'',0)
     ON CONFLICT(safeID,name,dir,id) DO NOTHING
 
 -- MIO_UPDATE_LOCALCOPY
@@ -90,11 +90,20 @@ SELECT id,name,dir,groupName,tags,modTime,size,creator,attributes,localCopy,copy
     LIMIT CASE WHEN :limit = 0 THEN -1 ELSE :limit END OFFSET :offset
 
 -- MIO_GET_FILE_BY_NAME
-SELECT  id,dir,groupName,tags,modTime,size,creator,attributes,localCopy,copyTime,encryptionKey  
-    FROM mio_files WHERE safeID=:safeID AND dir=:dir AND name=:name
+SELECT  id,groupName,tags,modTime,size,creator,attributes,localCopy,copyTime,encryptionKey  
+    FROM mio_files WHERE safeID=:safeID AND dir=:dir AND name=:name ORDER BY id DESC LIMIT 1
 
 -- MIO_GET_GROUP_NAME 
 SELECT DISTINCT groupName FROM mio_files WHERE safeID=:safeID AND dir = :dir AND name = :name 
+
+-- MIO_DELETE_FILE
+DELETE FROM mio_files WHERE safeID=:safeID AND id=:id
+
+-- MIO_DELETE_DIR
+DELETE FROM mio_files WHERE safeID=:safeID AND dir=:dir AND id=0 AND NOT EXISTS(SELECT 1 FROM mio_files WHERE safeID=:safeID AND dir=:dir AND id>0)
+
+-- MIO_RENAME_FILE
+UPDATE mio_files SET name=:newName, dir=:newDir WHERE safeID=:safeID AND id=:id AND name=:oldName AND dir=:oldDir
 
 -- INIT
 CREATE TABLE IF NOT EXISTS mio_file_async (

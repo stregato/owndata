@@ -14,7 +14,7 @@ var grantCmd = &assist.Command{
 	Short:  "Grant access to a safe",
 	Params: []assist.Param{safeParam, userParam},
 	Run: func(params map[string]string) error {
-		userId, _ := security.NewUserId(params["user"])
+		userId, _ := security.CastID(params["user"])
 
 		s, err := getSafeByName(params["safe"])
 		if err != nil {

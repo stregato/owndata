@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -166,7 +167,7 @@ var storeParam = assist.Param{
 
 func creatorMatch(c *assist.Command, arg string, params map[string]string) (string, error) {
 	if arg != "" {
-		_, err := security.NewUserId(arg)
+		_, err := security.CastID(arg)
 		if err != nil {
 			return "", err
 		}
@@ -182,7 +183,7 @@ func creatorMatch(c *assist.Command, arg string, params map[string]string) (stri
 	if err != nil {
 		return "", err
 	}
-	_, err = security.NewUserId(creatorId)
+	_, err = security.CastID(creatorId)
 	if err != nil {
 		return "", err
 	}
@@ -219,7 +220,13 @@ var createCmd = &assist.Command{
 	Short:  "create a new safe",
 	Params: []assist.Param{storeParam, creatorParam, nameParam},
 	Run: func(args map[string]string) error {
-		s, err := safe.Create(DB, Identity, args["store"], args["name"])
+		u, err := url.Parse(args["store"])
+		if err != nil {
+			return err
+		}
+
+		u.Path = path.Join(u.Path, Identity.Id.String(), args["name"])
+		s, err := safe.Create(DB, Identity, u.String(), safe.Config{})
 		if err != nil {
 			return err
 		}

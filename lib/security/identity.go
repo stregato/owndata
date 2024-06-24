@@ -61,7 +61,7 @@ func NewIdentityMust(nick string) *Identity {
 	return identity
 }
 
-func NewUserId(id string) (ID, error) {
+func CastID(id string) (ID, error) {
 	id = strings.TrimSpace(id)
 	_, _, err := DecodeKeys(id)
 	if core.IsErr(err, "invalid ID '%s': %v", id) {

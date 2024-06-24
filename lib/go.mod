@@ -48,6 +48,7 @@ require (
 )
 
 require (
+	bazil.org/fuse v0.0.0-20230120002735-62a210ff1fd5
 	github.com/beevik/ntp v1.0.0
 	github.com/godruoyi/go-snowflake v0.0.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible

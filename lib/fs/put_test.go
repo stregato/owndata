@@ -21,7 +21,10 @@ func TestPutData(t *testing.T) {
 	_, err = f.PutData("test", []byte("hello world"), PutOptions{})
 	core.TestErr(t, err, "cannot put data: %v")
 
-	data, err := f.GetData("test", GetOptions{})
+	_, err = f.PutData("sub/test", []byte("hello world"), PutOptions{})
+	core.TestErr(t, err, "cannot put data: %v")
+
+	data, err := f.GetData("sub/test", GetOptions{})
 	core.TestErr(t, err, "cannot get data: %v")
 	core.Assert(t, string(data) == "hello world", "unexpected data: %s", data)
 }

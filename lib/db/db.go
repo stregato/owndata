@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	_ "embed"
 
+	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/safe"
 )
 
-type PulseDB struct {
+type Database struct {
 	*safe.Safe
 	log       []Update
 	tx        *sql.Tx
@@ -20,13 +21,15 @@ var (
 
 type DDLs map[float32]string
 
-func Open(s *safe.Safe, ddls DDLs, groupName safe.GroupName) (PulseDB, error) {
+func Open(s *safe.Safe, groupName safe.GroupName, ddls DDLs) (Database, error) {
 	for version, ddl := range ddls {
 		err := s.DB.Define(version, ddl)
 		if err != nil {
-			return PulseDB{}, err
+			return Database{}, err
 		}
 	}
 
-	return PulseDB{s, nil, nil, groupName}, nil
+	core.Info("Opening database on safe %s with group %s", s.URL, groupName)
+
+	return Database{s, nil, nil, groupName}, nil
 }

@@ -120,7 +120,7 @@ func (s *Safe) UpdateGroup(groupName GroupName, change Change, users ...security
 		if err != nil {
 			return nil, err
 		}
-		err = applyChange(gc, groups, s.CreatorId) // apply the change to the local groups
+		err = applyChange(gc, groups, s.CreatorID) // apply the change to the local groups
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +199,7 @@ func SyncGroupChain(s *Safe) (GroupChain, error) {
 	}
 
 	var lead int
-	lead, g = addChanges(g, rgcs, batchId, s.CreatorId)
+	lead, g = addChanges(g, rgcs, batchId, s.CreatorID)
 	switch lead {
 	case leadLocal:
 		core.Info("local group chain is lead, writing the changes to the store")

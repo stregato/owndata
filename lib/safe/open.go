@@ -18,7 +18,7 @@ import (
 var nextHnd int
 var nextHndLock sync.Mutex
 
-func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
+func connect(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
 	u, err := url_.Parse(url)
 	if err != nil {
 		return nil, core.Errorw(err, "invalid url %s : %v", url)
@@ -29,7 +29,7 @@ func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
 		return nil, core.Errorf("missing creator hash and safe name in %s", url)
 	}
 
-	creatorId, err := security.NewUserId(parts[len(parts)-2])
+	creatorId, err := security.CastID(parts[len(parts)-2])
 	if err != nil {
 		return nil, core.Errorf("invalid creator id in %s", url)
 	}
@@ -49,8 +49,16 @@ func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
 		ID:        store.ID(),
 		DB:        db,
 		Store:     store,
-		CreatorId: creatorId,
+		CreatorID: creatorId,
 		Identity:  identity,
+	}
+	return s, nil
+}
+
+func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
+	s, err := connect(db, identity, url)
+	if err != nil {
+		return nil, err
 	}
 
 	config, err := s.ReadConfig()

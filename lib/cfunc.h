@@ -2,7 +2,8 @@
 #define _CFUNC_H
 
 typedef struct Result{
-    char* res;
+    char* val;
+    unsigned long long hnd;
 	char* err;
 } Result;
 

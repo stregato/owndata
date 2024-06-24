@@ -41,7 +41,7 @@ func listenRun(params map[string]string) error {
 	}
 	defer s.Close()
 
-	d, err := db.Open(s, nil, safe.UserGroup)
+	d, err := db.Open(s, safe.UserGroup, nil)
 	if err != nil {
 		return err
 	}

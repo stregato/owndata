@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Safe) WriteConfig(config Config) error {
-	if s.Identity.Id != s.CreatorId {
+	if s.Identity.Id != s.CreatorID {
 		return core.Errorf("only the creator can write the config")
 	}
 
@@ -31,7 +31,7 @@ func (s *Safe) ReadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	if !security.Verify(s.CreatorId, hashOfConfig(config), config.Signature) {
+	if !security.Verify(s.CreatorID, hashOfConfig(config), config.Signature) {
 		return Config{}, core.Errorf("config signature is invalid")
 	}
 	return config, nil

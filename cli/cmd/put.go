@@ -11,19 +11,20 @@ var srcParam = assist.Param{
 	Use:   "src",
 	Short: "The source path on the local filesystem",
 
-	Complete: func(c *assist.Command, arg string, params map[string]string) {
-	},
+	Complete: pathComplete(pathMatchOptions{
+		onlyFile: true,
+	}),
 	Match: pathMatch(pathMatchOptions{
-		msg:      "Select a source",
-		safePath: false,
+		msg: "Select a source",
 	}),
 }
 
 var destParam = assist.Param{
 	Use:   "dst",
 	Short: "The destination path on the safe",
-	Complete: func(c *assist.Command, arg string, params map[string]string) {
-	},
+	Complete: pathComplete(pathMatchOptions{
+		safePath: true,
+	}),
 	Match: pathMatch(pathMatchOptions{
 		msg:      "Select a destination",
 		safePath: true,

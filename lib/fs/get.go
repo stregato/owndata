@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/mio/lib/security"
 	"github.com/stregato/mio/lib/sqlx"
 )
 
@@ -14,14 +15,14 @@ type GetOptions struct {
 	Async bool
 }
 
-func (f *FS) GetData(src string, options GetOptions) ([]byte, error) {
+func (f *FileSystem) GetData(src string, options GetOptions) ([]byte, error) {
 	var dest bytes.Buffer
 
 	if options.Async {
 		return nil, core.Errorf("GetData does not support async mode. Use GetFile instead")
 	}
 
-	file, err := f.getFileRecord(src)
+	file, err := f.Stat(src)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +35,8 @@ func (f *FS) GetData(src string, options GetOptions) ([]byte, error) {
 	return dest.Bytes(), nil
 }
 
-func (f *FS) GetFile(src, dest string, options GetOptions) (File, error) {
-	file, err := f.getFileRecord(src)
+func (f *FileSystem) GetFile(src, dest string, options GetOptions) (File, error) {
+	file, err := f.Stat(src)
 	if err != nil {
 		return File{}, err
 	}
@@ -57,22 +58,7 @@ func (f *FS) GetFile(src, dest string, options GetOptions) (File, error) {
 	return file, nil
 }
 
-func (f *FS) getFileRecord(src string) (File, error) {
-	dir, name := path.Split(src)
-
-	var file File
-	err := f.S.DB.QueryRow("MIO_GET_FILE_BY_NAME", sqlx.Args{"safeID": f.S.ID, "dir": dir, "name": name},
-		&file.ID, &file.Dir, &file.GroupName, &file.Tags, &file.ModTime, &file.Size, &file.Creator, &file.Attributes, &file.LocalCopy, &file.EncryptionKey)
-	if err == sqlx.ErrNoRows {
-		return File{}, os.ErrNotExist
-	}
-	if err != nil {
-		return File{}, err
-	}
-	return file, nil
-}
-
-func (f *FS) getSync(file File, localPath string, dest io.Writer) error {
+func (f *FileSystem) getSync(file File, localPath string, dest io.Writer) error {
 	encryptionKey := file.EncryptionKey
 
 	if dest == nil {
@@ -88,12 +74,12 @@ func (f *FS) getSync(file File, localPath string, dest io.Writer) error {
 		dest = destFile
 	}
 
-	dest, err := decryptWriter(dest, encryptionKey[0:32], encryptionKey[32:48])
+	dest, err := security.DecryptWriter(dest, encryptionKey[0:32], encryptionKey[32:48])
 	if err != nil {
 		return err
 	}
 
-	err = f.S.Store.Read(path.Join(DataDir, file.ID), nil, dest, nil)
+	err = f.S.Store.Read(path.Join(DataDir, file.ID.String()), nil, dest, nil)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,415 @@
+{
+    "export": [
+        {
+            "name": "mio_newIdentity",
+            "parameters": [
+                {
+                    "name": "nick",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_nick",
+            "parameters": [
+                {
+                    "name": "identity",
+                    "type": "*C.char",
+                    "binding": "security.Identity"
+                }
+            ]
+        },
+        {
+            "name": "mio_newUserId",
+            "parameters": [
+                {
+                    "name": "id",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_decodeKeys",
+            "parameters": [
+                {
+                    "name": "id",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_openDB",
+            "parameters": [
+                {
+                    "name": "url",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_openSafe",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "identity",
+                    "type": "C.long",
+                    "binding": "security.Identity"
+                },
+                {
+                    "name": "url",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_closeSafe",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_updateGroup",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "groupName",
+                    "type": "*C.char",
+                    "binding": null
+                },
+                {
+                    "name": "change",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "users",
+                    "type": "*C.char",
+                    "binding": "[]security.ID"
+                }
+            ]
+        },
+        {
+            "name": "mio_getGroups",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_getKeys",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "groupName",
+                    "type": "*C.char",
+                    "binding": null
+                },
+                {
+                    "name": "expectedMinimumLenght",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_openFS",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_closeFS",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_list",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "path",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "options",
+                    "type": "*C.char",
+                    "binding": "fs.ListOptions"
+                }
+            ]
+        },
+        {
+            "name": "mio_stat",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "path",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_putFile",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "dest",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "src",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "options",
+                    "type": "*C.char",
+                    "binding": "fs.PutOptions"
+                }
+            ]
+        },
+        {
+            "name": "mio_putData",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "dest",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "data",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "options",
+                    "type": "*C.char",
+                    "binding": "fs.PutOptions"
+                }
+            ]
+        },
+        {
+            "name": "mio_getFile",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "src",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "dest",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "options",
+                    "type": "*C.char",
+                    "binding": "fs.GetOptions"
+                }
+            ]
+        },
+        {
+            "name": "mio_getData",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "src",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "options",
+                    "type": "*C.char",
+                    "binding": "fs.GetOptions"
+                }
+            ]
+        },
+        {
+            "name": "mio_delete",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "path",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_rename",
+            "parameters": [
+                {
+                    "name": "fsH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "oldPath",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "newPath",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_openDatabase",
+            "parameters": [
+                {
+                    "name": "safeH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "ddls",
+                    "type": "*C.char",
+                    "binding": "map[float32]string"
+                },
+                {
+                    "name": "groupName",
+                    "type": "*C.char",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_closeDatabase",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_exec",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "key",
+                    "type": "*C.char",
+                    "binding": null
+                },
+                {
+                    "name": "args",
+                    "type": "*C.char",
+                    "binding": "sqlx.Args"
+                }
+            ]
+        },
+        {
+            "name": "mio_sync",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_cancel",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                }
+            ]
+        },
+        {
+            "name": "mio_query",
+            "parameters": [
+                {
+                    "name": "dbH",
+                    "type": "C.long",
+                    "binding": null
+                },
+                {
+                    "name": "key",
+                    "type": "*C.char",
+                    "binding": null
+                },
+                {
+                    "name": "args",
+                    "type": "*C.char",
+                    "binding": "sqlx.Args"
+                }
+            ]
+        }
+    ],
+    "types": {}
+}

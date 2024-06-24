@@ -26,7 +26,7 @@ var messageParam = assist.Param{
 	},
 }
 
-func writeMessage(p db.PulseDB, message string) error {
+func writeMessage(p db.Database, message string) error {
 	_, err := p.Exec("INSERT_MESSAGE", sqlx.Args{"message": message,
 		"createdAt":   core.Now(),
 		"creatorId":   Identity.Id,
@@ -35,7 +35,8 @@ func writeMessage(p db.PulseDB, message string) error {
 	if err != nil {
 		return err
 	}
-	return p.Commit()
+	_, err = p.Sync()
+	return err
 }
 
 func sayRun(args map[string]string) error {
@@ -46,7 +47,7 @@ func sayRun(args map[string]string) error {
 		return err
 	}
 
-	p, err := db.Open(s, nil, safe.UserGroup)
+	p, err := db.Open(s, safe.UserGroup, nil)
 	if err != nil {
 		return err
 	}

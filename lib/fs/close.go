@@ -1,5 +1,5 @@
 package fs
 
-func (fs *FS) Close() {
+func (fs *FileSystem) Close() {
 	fs.stopUploadJob()
 }

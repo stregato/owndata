@@ -51,7 +51,7 @@ func listSafes() ([]safeDesc, error) {
 		}
 
 		creator := parts[len(parts)-2]
-		creatorId, err := security.NewUserId(creator)
+		creatorId, err := security.CastID(creator)
 		if err != nil {
 			continue
 		}
@@ -80,7 +80,7 @@ func matchUser(c *assist.Command, arg string, params map[string]string) (string,
 			return "", err
 		}
 	}
-	_, err := security.NewUserId(arg)
+	_, err := security.CastID(arg)
 	if err != nil {
 		return "", err
 	}

@@ -6,9 +6,7 @@ import (
 	"github.com/stregato/mio/lib/sqlx"
 )
 
-func (d *PulseDB) Exec(key string, args sqlx.Args) (s.Result, error) {
-	args["safe"] = d.Safe.ID
-	args["groupName"] = string(d.groupName)
+func (d *Database) Exec(key string, args sqlx.Args) (s.Result, error) {
 	if d.tx == nil {
 		tx, err := d.Safe.DB.GetConnection().Begin()
 		if err != nil {

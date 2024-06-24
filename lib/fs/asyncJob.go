@@ -8,16 +8,16 @@ import (
 	"github.com/stregato/mio/lib/sqlx"
 )
 
-var triggerAsync = make(chan string, 16)
+var triggerAsync = make(chan FileID, 16)
 var uploadLock sync.Mutex
-var activeUploads = make(map[*FS]*time.Timer)
+var activeUploads = make(map[*FileSystem]*time.Timer)
 
-func (fs *FS) HasPutCompleted(id string) bool {
+func (fs *FileSystem) HasPutCompleted(id FileID) bool {
 	err := fs.S.DB.QueryRow("MIO_GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID})
 	return err == sqlx.ErrNoRows
 }
 
-func (fs *FS) startUploadJob() {
+func (fs *FileSystem) startUploadJob() {
 	uploadLock.Lock()
 	timer := time.NewTimer(time.Duration(5) * time.Second)
 	activeUploads[fs] = timer
@@ -62,7 +62,7 @@ func (fs *FS) startUploadJob() {
 					core.Info("cannot put file async: %v", err)
 					continue
 				}
-				cleanup = append(cleanup, file.ID)
+				cleanup = append(cleanup, file.ID.String())
 			}
 			rows.Close()
 		case id := <-triggerAsync:
@@ -90,7 +90,7 @@ func (fs *FS) startUploadJob() {
 				core.Info("cannot put file async: %v", err)
 				continue
 			}
-			cleanup = append(cleanup, file.ID)
+			cleanup = append(cleanup, file.ID.String())
 		}
 
 		for _, id := range cleanup {
@@ -104,7 +104,7 @@ func (fs *FS) startUploadJob() {
 	}
 }
 
-func (fs *FS) stopUploadJob() {
+func (fs *FileSystem) stopUploadJob() {
 	uploadLock.Lock()
 	timer, ok := activeUploads[fs]
 	if ok {

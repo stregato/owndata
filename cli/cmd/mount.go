@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"os"
+	"path"
 	"runtime"
 
 	"github.com/stregato/mio/cli/assist"
 	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
+	"github.com/stregato/mio/lib/fs"
 )
 
 func getDesktopFolder() (string, error) {
@@ -27,16 +28,26 @@ func getDesktopFolder() (string, error) {
 }
 
 func mountRun(params map[string]string) error {
-	url := params["safe"]
-	path := params["path"]
+	safe := params["safe"]
 
-	s, err := safe.Open(DB, Identity, url)
+	s, err := getSafeByName(safe)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
 
-	err = mountFS(s, path)
+	ph, err := getDesktopFolder()
+	if err != nil {
+		return err
+	}
+	ph = path.Join(ph, safe)
+
+	f, err := fs.Open(s)
+	if err != nil {
+		return err
+	}
+
+	err = f.Mount(ph)
 	if err != nil {
 		return err
 	}

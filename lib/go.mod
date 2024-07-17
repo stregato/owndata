@@ -3,6 +3,7 @@ module github.com/stregato/mio/lib
 go 1.21.3
 
 require (
+	github.com/Azure/azure-pipeline-go v0.2.3
 	github.com/aws/aws-sdk-go-v2 v1.25.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.45
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.43
@@ -41,14 +42,17 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/kr/fs v0.1.0 // indirect
+	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
 	bazil.org/fuse v0.0.0-20230120002735-62a210ff1fd5
+	github.com/Azure/azure-storage-file-go v0.8.0
 	github.com/beevik/ntp v1.0.0
 	github.com/godruoyi/go-snowflake v0.0.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible

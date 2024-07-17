@@ -78,5 +78,11 @@ func TestSend(t *testing.T) {
 	core.TestErr(t, err, "cannot receive: %v")
 	core.Assert(t, len(ms) == 1, "received messages: %v", ms)
 	core.Assert(t, bytes.Equal(ms[0].Data, data), "received message: %v", ms[0])
+
+	c.Rewind(bob.Id.String(), 0)
+	ms, err = c.Receive("")
+	core.TestErr(t, err, "cannot receive: %v")
+	core.Assert(t, len(ms) == 1, "received messages: %v", ms)
+
 	s.Close()
 }

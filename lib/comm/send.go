@@ -49,6 +49,7 @@ func (c *Comm) send(m Message) error {
 		if err != nil {
 			return err
 		}
+		core.Info("message file for id %d saved to %s", m.ID, messageFile+".data")
 
 		data, err := security.EncryptAES([]byte(name), key)
 		if err != nil {
@@ -75,6 +76,7 @@ func (c *Comm) send(m Message) error {
 	if err != nil {
 		return err
 	}
+	core.Info("message for id %d saved to %s", m.ID, messageFile)
 
 	return nil
 }

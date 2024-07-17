@@ -23,19 +23,19 @@ import (
 type FileID uint64
 
 type File struct {
-	ID            FileID
-	Dir           string
-	Name          string
-	IsDir         bool
-	GroupName     safe.GroupName
-	Creator       security.ID
-	Size          int
-	ModTime       time.Time
-	Tags          core.Set[string]
-	Attributes    map[string]any
-	LocalCopy     string
-	CopyTime      time.Time
-	EncryptionKey []byte
+	ID            FileID           `json:"id"`
+	Dir           string           `json:"dir"`
+	Name          string           `json:"name"`
+	IsDir         bool             `json:"isDir"`
+	GroupName     safe.GroupName   `json:"groupName"`
+	Creator       security.ID      `json:"creator"`
+	Size          int              `json:"size"`
+	ModTime       time.Time        `json:"modTime"`
+	Tags          core.Set[string] `json:"tags"`
+	Attributes    map[string]any   `json:"attributes"`
+	LocalCopy     string           `json:"localCopy"`
+	CopyTime      time.Time        `json:"copyTime"`
+	EncryptionKey []byte           `json:"encryptionKey"`
 }
 
 func (fileID FileID) String() string {

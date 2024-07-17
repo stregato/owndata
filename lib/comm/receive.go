@@ -61,6 +61,7 @@ func (c *Comm) Receive(filter string) ([]Message, error) {
 		}
 	}
 
+	core.Info("received %d messages from safe %s", len(messages), c.S.URL)
 	return messages, nil
 }
 

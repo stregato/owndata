@@ -1,6 +1,10 @@
 package comm
 
 import (
+	"fmt"
+
+	"github.com/stregato/mio/lib/config"
+	"github.com/stregato/mio/lib/core"
 	"github.com/stregato/mio/lib/safe"
 	"github.com/stregato/mio/lib/security"
 )
@@ -15,6 +19,15 @@ var (
 
 func Open(s *safe.Safe) *Comm {
 	return &Comm{S: s}
+}
+
+func (c *Comm) Rewind(dest string, messageID MessageID) error {
+	err := config.SetConfigValue(c.S.DB, "comm", fmt.Sprintf("lastId-%s-%s", c.S.ID, dest), messageID.String(), 0, nil)
+	if err != nil {
+		return core.Errorf("cannot set lastId for %s: %s", dest, err)
+	}
+	core.Info("rewinded communication for %s to id %d", dest, messageID)
+	return nil
 }
 
 func (c *Comm) getEncryptionKeys(sender security.ID, dest string) (keys []safe.Key, err error) {

@@ -9,13 +9,13 @@ import (
 type MessageID uint64
 
 type Message struct {
-	Sender       security.ID
-	EncryptionId int
-	Recipient    string
-	ID           MessageID
-	Text         string
-	Data         []byte
-	File         string
+	Sender       security.ID `json:"sender"`
+	EncryptionId int         `json:"encryptionId"`
+	Recipient    string      `json:"recipient"`
+	ID           MessageID   `json:"id"`
+	Text         string      `json:"text"`
+	Data         []byte      `json:"data"`
+	File         string      `json:"file"`
 }
 
 func (id MessageID) String() string {

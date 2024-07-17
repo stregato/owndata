@@ -33,7 +33,7 @@ windows: export LIBRARY_NAME=mio.dll
 windows: build_targets
 
 # Pattern rule to combine lib, cli, and py for each platform
-build_targets: lib cli py
+build_targets: lib cli py dart
 
 # Target for building the shared library
 lib:
@@ -49,8 +49,12 @@ py:
 	cp $(BUILD_PATH)/$(LIBRARY_NAME) ./py/lib
 	cd py && python setup.py build_ext --inplace
 
+dart:
+	@mkdir -p ./dart/lib
+	cp $(BUILD_PATH)/$(LIBRARY_NAME) ./dart/lib
+
 # Target for cleaning up the build artifacts
 clean:
 	@rm -rf $(BUILD_PATH)
 
-.PHONY: all lib cli py clean linux android darwin windows
+.PHONY: all lib cli py dart clean linux android darwin windows

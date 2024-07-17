@@ -54,7 +54,7 @@ lib.mio_stat.restype = Result
 lib.mio_putFile.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
 lib.mio_putFile.restype = Result
 
-lib.mio_putData.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
+lib.mio_putData.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_char_p]
 lib.mio_putData.restype = Result
 
 lib.mio_getFile.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
@@ -90,5 +90,47 @@ lib.mio_closeRows.restype = Result
 lib.mio_sync.argtypes = [ctypes.c_ulonglong]
 lib.mio_sync.restype = Result
 
+lib.mio_rewind.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_ulonglong]
+lib.mio_rewind.restype = Result
+
 lib.mio_cancel.argtypes = [ctypes.c_ulonglong]
 lib.mio_cancel.restype = Result
+
+lib.mio_openComm.argtypes = [ctypes.c_ulonglong]
+lib.mio_openComm.restype = Result
+
+lib.mio_send.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
+lib.mio_send.restype = Result
+
+lib.mio_broadcast.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p]
+lib.mio_broadcast.restype = Result
+
+lib.mio_receive.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p]
+lib.mio_receive.restype = Result
+
+lib.mio_download.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
+lib.mio_download.restype = Result
+
+def consume(r):
+    try:
+        if r.err:
+            raise Exception(r.err.decode("utf-8"))
+        
+        if not r.ptr:
+            return None
+        
+        # Interpret ptr as a byte array of length len
+        byte_array = (ctypes.c_ubyte * r.len).from_address(r.ptr)
+        byte_data = bytes(byte_array)
+        
+        # Convert byte array to JSON object
+        return json.loads(byte_data)
+    
+    finally:
+        # Free the allocated memory for ptr and err
+        if r.ptr:
+            lib.free(r.ptr)
+            r.ptr = None
+        if r.err:
+            lib.free(r.err)
+            r.err = None 

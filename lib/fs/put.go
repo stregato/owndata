@@ -14,12 +14,12 @@ import (
 )
 
 type PutOptions struct {
-	ID         FileID           // the ID of the file, used to overwrite an existing file
-	Async      bool             // put the file asynchronously
-	DeleteSrc  bool             // delete the source file after a successful put
-	GroupName  safe.GroupName   // the group name of the file. If empty, the group name is calculated from the directory
-	Tags       core.Set[string] // the tags of the file
-	Attributes map[string]any   // the attributes of the file
+	ID         FileID           `json:"id"`         // the ID of the file, used to overwrite an existing file
+	Async      bool             `json:"async"`      // put the file asynchronously
+	DeleteSrc  bool             `json:"deleteSrc"`  // delete the source file after putting it
+	GroupName  safe.GroupName   `json:"groupName"`  // the group name of the file. If empty, the group name is calculated from the directory
+	Tags       core.Set[string] `json:"tags"`       // the tags of the file
+	Attributes map[string]any   `json:"attributes"` // the attributes of the file
 }
 
 func (fs *FileSystem) PutData(dest string, src []byte, options PutOptions) (File, error) {

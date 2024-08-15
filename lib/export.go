@@ -5,6 +5,7 @@ package main
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 */
 import "C"
@@ -92,6 +93,12 @@ func mio_setLogLevel(level *C.char) C.Result {
 	case "panic":
 		logrus.SetLevel(logrus.PanicLevel)
 	}
+	return cResult(nil, 0, nil)
+}
+
+//export mio_test
+func mio_test(nick *C.char) C.Result {
+	print(C.GoString(nick))
 	return cResult(nil, 0, nil)
 }
 

@@ -20,7 +20,7 @@ func (fs *FileSystem) Mount(mountPoint string) error {
 
 	c, err := fuse.Mount(
 		mountPoint,
-		fuse.FSName("miofs"),
+		fuse.FSName("stashfs"),
 		fuse.Subtype(fs.S.ID),
 	)
 	if err != nil {

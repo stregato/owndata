@@ -9,15 +9,15 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/sirupsen/logrus"
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 var Root = &assist.Command{
-	Use:   "mio",
-	Short: "mio is a CLI tool to manage encrypted safes on remote servers",
+	Use:   "stash",
+	Short: "stash is a CLI tool to manage encrypted safes on remote servers",
 }
 
 var (
@@ -44,7 +44,7 @@ func setupDB() {
 		if err != nil {
 			panic(err)
 		}
-		*DBPath = filepath.Join(dir, "mio.db")
+		*DBPath = filepath.Join(dir, "stash.db")
 	} else {
 		println("Using database at ", *DBPath)
 	}

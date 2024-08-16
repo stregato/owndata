@@ -11,31 +11,31 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/stash"
 
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/storage"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
 type FileID uint64
 
 type File struct {
-	ID            FileID           `json:"id"`
-	Dir           string           `json:"dir"`
-	Name          string           `json:"name"`
-	IsDir         bool             `json:"isDir"`
-	GroupName     safe.GroupName   `json:"groupName"`
-	Creator       security.ID      `json:"creator"`
-	Size          int              `json:"size"`
-	ModTime       time.Time        `json:"modTime"`
-	Tags          core.Set[string] `json:"tags"`
-	Attributes    map[string]any   `json:"attributes"`
-	LocalCopy     string           `json:"localCopy"`
-	CopyTime      time.Time        `json:"copyTime"`
-	EncryptionKey []byte           `json:"encryptionKey"`
+	ID            FileID          `json:"id"`
+	Dir           string          `json:"dir"`
+	Name          string          `json:"name"`
+	IsDir         bool            `json:"isDir"`
+	GroupName     stash.GroupName `json:"groupName"`
+	Creator       security.ID     `json:"creator"`
+	Size          int             `json:"size"`
+	ModTime       time.Time       `json:"modTime"`
+	Tags          []string        `json:"tags"`
+	Attributes    map[string]any  `json:"attributes"`
+	LocalCopy     string          `json:"localCopy"`
+	CopyTime      time.Time       `json:"copyTime"`
+	EncryptionKey []byte          `json:"encryptionKey"`
 }
 
 func (fileID FileID) String() string {
@@ -51,7 +51,7 @@ func (f File) Path() string {
 }
 
 type FileWrap struct {
-	Group        safe.GroupName
+	Group        stash.GroupName
 	EncryptionId int
 	Data         []byte
 }
@@ -66,7 +66,7 @@ func hashDir(dir string) string {
 	return strconv.FormatUint(hasher.Sum64(), 16)
 }
 
-func writeHeader(s *safe.Safe, f File) (string, error) {
+func writeHeader(s *stash.Stash, f File) (string, error) {
 	dest := path.Join(HeadersDir, hashDir(f.Dir), f.ID.String())
 
 	keys, err := s.GetKeys(f.GroupName, 0)
@@ -100,7 +100,7 @@ func writeHeader(s *safe.Safe, f File) (string, error) {
 	return dest, err
 }
 
-func readHeader(s *safe.Safe, dir, name string) (File, error) {
+func readHeader(s *stash.Stash, dir, name string) (File, error) {
 	src := path.Join(HeadersDir, hashDir(dir), name)
 
 	var fw FileWrap
@@ -132,7 +132,7 @@ func readHeader(s *safe.Safe, dir, name string) (File, error) {
 	return f, nil
 }
 
-func syncHeaders(s *safe.Safe, dir string) error {
+func syncHeaders(s *stash.Stash, dir string) error {
 	ls, err := s.Store.ReadDir(path.Join(HeadersDir, hashDir(dir)), storage.Filter{})
 	if os.IsNotExist(err) {
 		return nil
@@ -174,8 +174,8 @@ func syncHeaders(s *safe.Safe, dir string) error {
 
 const MIO_STORE_FILE = "MIO_STORE_FILE"
 
-func writeFileToDB(s *safe.Safe, f File) error {
-	tags := fmt.Sprintf(" %s ", strings.Join(f.Tags.Slice(), " "))
+func writeFileToDB(s *stash.Stash, f File) error {
+	tags := fmt.Sprintf(" %s ", strings.Join(f.Tags, " "))
 	if len(tags) > 4096 {
 		return core.Errorf("ErrTags: tags too long: %d", len(tags))
 	}
@@ -210,7 +210,7 @@ func writeFileToDB(s *safe.Safe, f File) error {
 
 const MIO_GET_FILES_BY_DIR = "MIO_GET_FILES_BY_DIR"
 
-func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suffix, tag string, orderBy string,
+func searchFiles(s *stash.Stash, dir string, after, before time.Time, prefix, suffix, tag string, orderBy string,
 	limit, offset int) ([]File, error) {
 	args := sqlx.Args{"dir": dir, "safeID": s.ID, "name": "", "groupName": "", "tag": tag, "creator": "",
 		"before": before.UnixNano(), "after": after.UnixNano(), "prefix": prefix, "suffix": suffix,
@@ -237,7 +237,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		if err != nil {
 			return nil, err
 		}
-		f.Tags = core.NewSet(strings.Split(strings.TrimSpace(tags), " ")...)
+		f.Tags = strings.Split(strings.TrimSpace(tags), " ")
 		f.IsDir = f.ID == 0
 		files = append(files, f)
 		core.Info("found file %s/%s", f.Dir, f.Name)

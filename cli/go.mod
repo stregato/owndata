@@ -1,4 +1,4 @@
-module github.com/stregato/mio/cli
+module github.com/stregato/stash/cli
 
 go 1.21.3
 
@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stregato/mio/lib v0.0.0
+	github.com/stregato/stash/lib v0.0.0
 )
 
 require (
@@ -66,4 +66,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/stregato/mio/lib => ../lib
+replace github.com/stregato/stash/lib => ../lib

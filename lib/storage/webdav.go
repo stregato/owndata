@@ -8,7 +8,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"github.com/studio-b12/gowebdav"
 )
 

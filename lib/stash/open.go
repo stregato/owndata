@@ -1,4 +1,4 @@
-package safe
+package stash
 
 import (
 	_ "embed"
@@ -9,16 +9,16 @@ import (
 
 	url_ "net/url"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/storage"
 )
 
 var nextHnd int
 var nextHndLock sync.Mutex
 
-func connect(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
+func connect(db *sqlx.DB, identity *security.Identity, url string) (*Stash, error) {
 	u, err := url_.Parse(url)
 	if err != nil {
 		return nil, core.Errorw(err, "invalid url %s : %v", url)
@@ -43,7 +43,7 @@ func connect(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error
 	defer nextHndLock.Unlock()
 	nextHnd++
 
-	s := &Safe{
+	s := &Stash{
 		Hnd:       nextHnd,
 		URL:       url,
 		ID:        store.ID(),
@@ -55,7 +55,7 @@ func connect(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error
 	return s, nil
 }
 
-func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
+func Open(db *sqlx.DB, identity *security.Identity, url string) (*Stash, error) {
 	s, err := connect(db, identity, url)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func Open(db *sqlx.DB, identity *security.Identity, url string) (*Safe, error) {
 	return s, nil
 }
 
-func NewTestSafe(t *testing.T, identity *security.Identity, storeId string, creatorId security.ID, persistent bool) *Safe {
+func NewTestSafe(t *testing.T, identity *security.Identity, storeId string, creatorId security.ID, persistent bool) *Stash {
 	core.T = t
 	db := sqlx.NewTestDB(t, persistent)
 

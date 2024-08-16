@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 //go:embed test.sql

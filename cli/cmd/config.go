@@ -1,6 +1,6 @@
 package cmd
 
-import "github.com/stregato/mio/cli/assist"
+import "github.com/stregato/stash/cli/assist"
 
 var safeCmd = &assist.Command{
 	Use:   "config",

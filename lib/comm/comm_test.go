@@ -5,18 +5,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/stash"
 )
 
 func TestBroadcast(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
 
 	c := Open(s)
-	err := c.Broadcast(safe.UserGroup, Message{Text: "hello world"})
+	err := c.Broadcast(stash.UserGroup, Message{Text: "hello world"})
 	core.TestErr(t, err, "cannot broadcast to user group: %v")
 
 	ms, err := c.Receive("")
@@ -25,17 +25,17 @@ func TestBroadcast(t *testing.T) {
 	core.Assert(t, len(ms) == 1, "received messages: %v", ms)
 	core.Assert(t, ms[0].Text == "hello world", "received message: %v", ms[0])
 
-	file, err := os.CreateTemp("", "mio-test-send.txt")
+	file, err := os.CreateTemp("", "stash-test-send.txt")
 	core.TestErr(t, err, "cannot create temp file: %v")
 
 	_, err = file.WriteString("hello world")
 	core.TestErr(t, err, "cannot write to temp file: %v")
 	file.Close()
 
-	err = c.Broadcast(safe.UserGroup, Message{File: file.Name()})
+	err = c.Broadcast(stash.UserGroup, Message{File: file.Name()})
 	core.TestErr(t, err, "cannot broadcast file to user group: %v")
 
-	file, err = os.CreateTemp("", "mio-test-recv.txt")
+	file, err = os.CreateTemp("", "stash-test-recv.txt")
 	core.TestErr(t, err, "cannot create temp file: %v")
 	file.Close()
 
@@ -57,8 +57,8 @@ func TestBroadcast(t *testing.T) {
 func TestSend(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
 	bob := security.NewIdentityMust("bob")
-	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
-	_, err := s.UpdateGroup(safe.UserGroup, safe.Grant, bob.Id)
+	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
+	_, err := s.UpdateGroup(stash.UserGroup, stash.Grant, bob.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 
 	c := Open(s)
@@ -70,7 +70,7 @@ func TestSend(t *testing.T) {
 
 	db := sqlx.NewTestDB(t, true)
 
-	s, err = safe.Open(db, bob, s.URL)
+	s, err = stash.Open(db, bob, s.URL)
 	core.TestErr(t, err, "cannot open safe %s", s.URL)
 
 	c = Open(s)

@@ -8,9 +8,9 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/fs"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/fs"
 )
 
 func getDesktopFolder() (string, error) {

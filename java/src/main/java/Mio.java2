@@ -1,0 +1,95 @@
+
+import java.io.File;
+
+public class Mio {
+
+    static {
+        System.setProperty("java.library.path", new File("lib").getAbsolutePath());
+        File file = new File("lib/libmiow.so");
+        if (!file.exists()) {
+            throw new RuntimeException("libmio.so not found");
+        }
+        System.load(file.getAbsolutePath());
+
+        file = new File("lib/libmiow.so");
+        if (!file.exists()) {
+            throw new RuntimeException("libmiow.so not found");
+        }
+        System.load(file.getAbsolutePath());
+    }
+
+    public native Result setLogLevel(String level);
+
+    public native Result newIdentity(String nick);
+
+    public native Result nick(String identity);
+
+    public native Result castID(String id);
+
+    public native Result decodeKeys(String id);
+
+    public native Result openDB(String url);
+
+    public native Result closeDB(long dbH);
+
+    public native Result createStash(long dbH, String identity, String url, String config);
+
+    public native Result openStash(long dbH, String identity, String url);
+
+    public native Result closeStash(long safeH);
+
+    public native Result updateGroup(long safeH, String groupName, long change, String users);
+
+    public native Result getGroups(long safeH);
+
+    public native Result getKeys(long safeH, String groupName, long expectedMinimumLength);
+
+    public native Result openFS(long safeH);
+
+    public native Result closeFS(long fsH);
+
+    public native Result list(long fsH, String path, String options);
+
+    public native Result stat(long fsH, String path);
+
+    public native Result putFile(long fsH, String dest, String src, String options);
+
+    public native Result putData(long fsH, String dest, byte[] data, String options);
+
+    public native Result getFile(long fsH, String src, String dest, String options);
+
+    public native Result getData(long fsH, String src, String options);
+
+    public native Result delete(long fsH, String path);
+
+    public native Result rename(long fsH, String oldPath, String newPath);
+
+    public native Result openDatabase(long safeH, String groupName, String ddls);
+
+    public native Result closeDatabase(long dbH);
+
+    public native Result exec(long dbH, String key, String args);
+
+    public native Result query(long dbH, String key, String args);
+
+    public native Result nextRow(long rowsH);
+
+    public native Result closeRows(long rowsH);
+
+    public native Result sync(long dbH);
+
+    public native Result cancel(long dbH);
+
+    public native Result openComm(long safeH);
+
+    public native Result rewind(long commH, String dest, long messageID);
+
+    public native Result send(long commH, String userId, String message);
+
+    public native Result broadcast(long commH, String groupName, String message);
+
+    public native Result receive(long commH, String filter);
+
+    public native Result download(long commH, String message, String dest);
+
+}

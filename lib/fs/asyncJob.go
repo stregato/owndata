@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 var triggerAsync = make(chan FileID, 16)

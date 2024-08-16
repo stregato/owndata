@@ -3,8 +3,8 @@ package fs
 import (
 	"path"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 func (fs *FileSystem) Delete(name string) error {

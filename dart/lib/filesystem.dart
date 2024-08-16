@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:mio/loader.dart';
+import 'package:stash/loader.dart';
 
 class File {
   int id = 0;
@@ -123,12 +123,12 @@ class Filesystem {
   Filesystem(this.hnd);
 
   void close() {
-    var fun = mioLibrary!.lookupFunction<ArgsI, Argsi>('mio_closeFS');
+    var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_closeFS');
     fun(hnd);
   }
 
   List<File> list(String path, ListOptions options) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_list');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_list');
     var s = jsonEncode(options.toJson());
     var res = fun(
         hnd, path.toNativeUtf8(), s.toNativeUtf8());
@@ -137,45 +137,45 @@ class Filesystem {
   }
 
   File stat(String path) {
-    var fun = mioLibrary!.lookupFunction<ArgsIS, ArgsiS>('mio_stat');
+    var fun = stashLibrary!.lookupFunction<ArgsIS, ArgsiS>('stash_stat');
     var res = fun(hnd, path.toNativeUtf8());
     return File.fromJson(res.map);
   }
 
   File putFile(String dest, String src, PutOptions options) {
-    var fun = mioLibrary!.lookupFunction<ArgsISSS, ArgsiSSS>('mio_putFile');
+    var fun = stashLibrary!.lookupFunction<ArgsISSS, ArgsiSSS>('stash_putFile');
     var res = fun(hnd, dest.toNativeUtf8(), src.toNativeUtf8(),
         jsonEncode(options).toNativeUtf8());
     return File.fromJson(res.map);
   }
 
   File putData(String dest, Uint8List src, PutOptions options) {
-    var fun = mioLibrary!.lookupFunction<ArgsISDS, ArgsiSDS>('mio_putData');
+    var fun = stashLibrary!.lookupFunction<ArgsISDS, ArgsiSDS>('stash_putData');
     var res = fun(hnd, dest.toNativeUtf8(), CData.fromUint8List(src),
         jsonEncode(options).toNativeUtf8());
     return File.fromJson(res.map);
   }
 
   File getFile(String src, String dest, GetOptions options) {
-    var fun = mioLibrary!.lookupFunction<ArgsISSS, ArgsiSSS>('mio_getFile');
+    var fun = stashLibrary!.lookupFunction<ArgsISSS, ArgsiSSS>('stash_getFile');
     var res = fun(hnd, src.toNativeUtf8(), dest.toNativeUtf8(), 
         jsonEncode(options).toNativeUtf8());
     return File.fromJson(res.map);
   }
 
   Uint8List getData(String src, GetOptions options) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_getData');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_getData');
     var res = fun(hnd, src.toNativeUtf8(), jsonEncode(options).toNativeUtf8());
     return res.data;
   }
 
   void delete(String path) {
-    var fun = mioLibrary!.lookupFunction<ArgsIS, ArgsiS>('mio_delete');
+    var fun = stashLibrary!.lookupFunction<ArgsIS, ArgsiS>('stash_delete');
     fun(hnd, path.toNativeUtf8()).check();
   }
 
   File rename(String src, String dest) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_rename');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_rename');
     return File.fromJson(fun(hnd, src.toNativeUtf8(), dest.toNativeUtf8()).map);
   }
 }

@@ -3,7 +3,7 @@ package comm
 import (
 	"strconv"
 
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/security"
 )
 
 type MessageID uint64

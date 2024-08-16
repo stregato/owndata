@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mio/comm.dart';
+import 'package:stash/comm.dart';
 
-import 'package:mio/db.dart';
-import 'package:mio/filesystem.dart';
-import 'package:mio/identity.dart';
-import 'package:mio/loader.dart';
-import 'package:mio/safe.dart';
+import 'package:stash/db.dart';
+import 'package:stash/filesystem.dart';
+import 'package:stash/identity.dart';
+import 'package:stash/loader.dart';
+import 'package:stash/safe.dart';
 
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    loadMioLibrary();
+    loadStashLibrary();
     setLogLevel('debug');
   });
   test('create safe', () async {

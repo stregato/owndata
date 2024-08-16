@@ -1,6 +1,6 @@
-package safe
+package stash
 
-import "github.com/stregato/mio/lib/storage"
+import "github.com/stregato/stash/lib/storage"
 
 type CDN struct {
 	Store storage.Store
@@ -8,7 +8,7 @@ type CDN struct {
 }
 
 type FS struct {
-	S        *Safe
+	S        *Stash
 	StoreUrl string
 	Quota    int64
 }

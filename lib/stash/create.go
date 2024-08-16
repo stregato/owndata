@@ -1,15 +1,15 @@
-package safe
+package stash
 
 import (
 	urllib "net/url"
 	"strings"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
-func Create(db *sqlx.DB, identity *security.Identity, url string, config Config) (*Safe, error) {
+func Create(db *sqlx.DB, identity *security.Identity, url string, config Config) (*Stash, error) {
 	u, err := urllib.Parse(url)
 	if err != nil {
 		return nil, core.Errorw(err, "invalid url %s : %v", url)

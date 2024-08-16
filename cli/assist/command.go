@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/core"
 )
 
 var (

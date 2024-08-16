@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	eciesgo "github.com/ecies/go/v2"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 var ErrInvalidSignature = errors.New("signature is invalid")

@@ -1,13 +1,13 @@
-package safe
+package stash
 
 import (
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/storage"
 	"golang.org/x/crypto/blake2b"
 )
 
-func (s *Safe) WriteConfig(config Config) error {
+func (s *Stash) WriteConfig(config Config) error {
 	if s.Identity.Id != s.CreatorID {
 		return core.Errorf("only the creator can write the config")
 	}
@@ -25,7 +25,7 @@ func (s *Safe) WriteConfig(config Config) error {
 	return nil
 }
 
-func (s *Safe) ReadConfig() (Config, error) {
+func (s *Stash) ReadConfig() (Config, error) {
 	var config Config
 	err := storage.ReadYAML(s.Store, ".config.yaml", &config, nil)
 	if err != nil {

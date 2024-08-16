@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:mio/loader.dart';
+import 'package:stash/loader.dart';
 
 class Message {
   String sender = '';
@@ -50,30 +50,30 @@ class Comm {
   Comm(this.hnd);
 
   void send(String userId, Message message) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_send');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_send');
     fun(hnd, userId.toNativeUtf8(), jsonEncode(message.toJson()).toNativeUtf8())
         .check();
   }
 
   void broadcast(String groupName, Message message) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_broadcast');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_broadcast');
     fun(hnd, groupName.toNativeUtf8(), jsonEncode(message.toJson()).toNativeUtf8())
         .check();
   }
 
   List<Message> receive({String filter = ''}) {
-    var fun = mioLibrary!.lookupFunction<ArgsIS, ArgsiS>('mio_receive');
+    var fun = stashLibrary!.lookupFunction<ArgsIS, ArgsiS>('stash_receive');
     var res = fun(hnd, filter.toNativeUtf8());
     return res.list.map((x) => Message.fromJson(x)).toList();
   }
 
   void download(String message, String dest) {
-    var fun = mioLibrary!.lookupFunction<ArgsISS, ArgsiSS>('mio_download');
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_download');
     fun(hnd, message.toNativeUtf8(), dest.toNativeUtf8()).check();
   }
 
   void rewind(String dest, int messageId) {
-    var fun = mioLibrary!.lookupFunction<ArgsISI, ArgsiSi>('mio_rewind');
+    var fun = stashLibrary!.lookupFunction<ArgsISI, ArgsiSi>('stash_rewind');
     fun(hnd, dest.toNativeUtf8(), messageId);
   }
 }

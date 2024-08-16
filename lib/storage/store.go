@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"gopkg.in/yaml.v2"
 )
 
@@ -104,7 +104,7 @@ func LoadTestURLs() (urls map[string]string) {
 	if core.IsErr(err, "cannot get user home dir: %v", err) {
 		panic(err)
 	}
-	filename := path.Join(homeDir, "mio_test_urls.yaml")
+	filename := path.Join(homeDir, "stash_test_urls.yaml")
 	_, err = os.Stat(filename)
 	if err != nil {
 		filename = "../test_urls.yaml"

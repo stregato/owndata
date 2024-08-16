@@ -3,9 +3,9 @@ package cmd
 import (
 	"strconv"
 
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/fs"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/fs"
 )
 
 func lsRun(params map[string]string) error {

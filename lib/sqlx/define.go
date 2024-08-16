@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 func (db *DB) Define(version float32, ddl string) error {

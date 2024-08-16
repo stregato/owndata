@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 type LocalConfig struct {

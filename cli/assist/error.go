@@ -3,7 +3,7 @@ package assist
 import (
 	"fmt"
 
-	"github.com/stregato/mio/cli/styles"
+	"github.com/stregato/stash/cli/styles"
 )
 
 func Errorf(format string, args ...interface{}) {

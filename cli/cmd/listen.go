@@ -5,12 +5,12 @@ import (
 	"slices"
 	"time"
 
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/db"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/db"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/stash"
 )
 
 func clearLines(lines int) {
@@ -41,7 +41,7 @@ func listenRun(params map[string]string) error {
 	}
 	defer s.Close()
 
-	d, err := db.Open(s, safe.UserGroup, nil)
+	d, err := db.Open(s, stash.UserGroup, nil)
 	if err != nil {
 		return err
 	}

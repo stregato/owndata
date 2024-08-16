@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"github.com/stretchr/testify/assert"
 )
 

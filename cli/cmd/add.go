@@ -7,12 +7,12 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/stash"
 )
 
 var askUrl = &survey.Input{
@@ -67,7 +67,7 @@ var addCmd = &assist.Command{
 	Run: func(args map[string]string) error {
 		url := args["url"]
 
-		s, err := safe.Open(DB, Identity, url)
+		s, err := stash.Open(DB, Identity, url)
 		if err != nil {
 			return err
 		}

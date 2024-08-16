@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/stash"
 
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/security"
 )
 
 var grantCmd = &assist.Command{
@@ -21,7 +21,7 @@ var grantCmd = &assist.Command{
 			return err
 		}
 		defer s.Close()
-		groups, err := s.UpdateGroup(safe.UserGroup, safe.Grant, userId)
+		groups, err := s.UpdateGroup(stash.UserGroup, stash.Grant, userId)
 		if err != nil {
 			return err
 		}

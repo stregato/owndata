@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 const SignatureField = "dgst_ed25519_blake2b"

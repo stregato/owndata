@@ -8,7 +8,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/stregato/mio/cli/assist"
+	"github.com/stregato/stash/cli/assist"
 )
 
 func mountMatch(c *assist.Command, arg string, params map[string]string) (string, error) {

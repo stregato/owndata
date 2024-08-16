@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/fs"
-	"github.com/stregato/mio/lib/safe"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/fs"
+	"github.com/stregato/stash/lib/stash"
 )
 
-func getSafeByName(name string) (*safe.Safe, error) {
+func getSafeByName(name string) (*stash.Stash, error) {
 	safes, err := listSafes()
 	if err != nil {
 		return nil, err
@@ -23,13 +23,13 @@ func getSafeByName(name string) (*safe.Safe, error) {
 
 	for _, s := range safes {
 		if s.name == name {
-			return safe.Open(DB, Identity, s.url)
+			return stash.Open(DB, Identity, s.url)
 		}
 	}
 	return nil, core.Errorf("Safe %s not found", name)
 }
 
-func getSafeAndPath(name string) (*safe.Safe, string, error) {
+func getSafeAndPath(name string) (*stash.Stash, string, error) {
 	dir := ""
 	if firstSlash := strings.Index(name, "/"); firstSlash > 0 {
 		dir = name[firstSlash+1:]

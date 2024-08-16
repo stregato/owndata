@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 func (fs *FileSystem) Rename(old, new string) (File, error) {

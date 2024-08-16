@@ -88,7 +88,7 @@ class Safe():
 
     @staticmethod
     def create(db: DB, creator: Identity, url: str, config: Config = Config()):
-        r = lib.mio_createSafe(db.hnd, o8(creator), e8(url), o8(config))
+        r = lib.mio_createStash(db.hnd, o8(creator), e8(url), o8(config))
         s = Safe()
         for k, v in consume(r).items():
             setattr(s, k, v)
@@ -98,7 +98,7 @@ class Safe():
 
     @staticmethod
     def open(db: DB, identity: Identity, url: str):
-        r = lib.mio_openSafe(db.hnd, o8(identity), e8(url))
+        r = lib.mio_openStash(db.hnd, o8(identity), e8(url))
         s = Safe()
         for k, v in consume(r).items():
             setattr(s, k, v)
@@ -106,7 +106,7 @@ class Safe():
         return s
 
     def close(self):
-        r = lib.mio_closeSafe(self.hnd)
+        r = lib.mio_closeStash(self.hnd)
         return consume(r)
     
     def update_group(self, groupName: str, change: int, users: Users):

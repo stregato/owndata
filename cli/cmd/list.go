@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/security"
 )
 
 type safeDesc struct {

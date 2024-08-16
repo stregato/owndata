@@ -21,14 +21,14 @@ lib.mio_closeDB.restype = Result
 lib.mio_newIdentity.argtypes = [ctypes.c_char_p]
 lib.mio_newIdentity.restype = Result
 
-lib.mio_createSafe.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
-lib.mio_createSafe.restype = Result
+lib.mio_createStash.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
+lib.mio_createStash.restype = Result
 
-lib.mio_openSafe.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
-lib.mio_openSafe.restype = Result
+lib.mio_openStash.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
+lib.mio_openStash.restype = Result
 
-lib.mio_closeSafe.argtypes = [ctypes.c_ulonglong]
-lib.mio_closeSafe.restype = Result
+lib.mio_closeStash.argtypes = [ctypes.c_ulonglong]
+lib.mio_closeStash.restype = Result
 
 lib.mio_updateGroup.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_long, ctypes.c_char_p]
 lib.mio_updateGroup.restype = Result

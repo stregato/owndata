@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/sftp"
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"golang.org/x/crypto/ssh"
 )
 

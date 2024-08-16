@@ -7,10 +7,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/storage"
 	"golang.org/x/crypto/blake2b"
 )
 

@@ -1,10 +1,10 @@
-package safe
+package stash
 
 import (
 	"testing"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
 )
 
 func TestGroupChain(t *testing.T) {

@@ -1,13 +1,13 @@
-package safe
+package stash
 
 import (
 	"path"
 
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/storage"
 )
 
-func (s *Safe) IsUpdated(dirs ...string) bool {
+func (s *Stash) IsUpdated(dirs ...string) bool {
 	name := path.Join(dirs...)
 	name = path.Join(name, ".touch")
 
@@ -24,7 +24,7 @@ func (s *Safe) IsUpdated(dirs ...string) bool {
 	return fileChange > lastChange
 }
 
-func (s *Safe) Touch(dirs ...string) error {
+func (s *Stash) Touch(dirs ...string) error {
 	name := path.Join(dirs...)
 	name = path.Join(name, ".touch")
 

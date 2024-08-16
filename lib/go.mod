@@ -1,4 +1,4 @@
-module github.com/stregato/mio/lib
+module github.com/stregato/stash/lib
 
 go 1.21.3
 

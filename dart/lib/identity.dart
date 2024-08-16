@@ -1,7 +1,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:mio/loader.dart';
+import 'package:stash/loader.dart';
  
 
 class Identity {
@@ -9,7 +9,7 @@ class Identity {
   String private = '';
 
   Identity(String nick) {
-    var fun = mioLibrary!.lookupFunction<ArgsS, ArgsS>('mio_newIdentity');
+    var fun = stashLibrary!.lookupFunction<ArgsS, ArgsS>('stash_newIdentity');
     var m = fun(nick.toNativeUtf8()).map;
     id = m['i'];
     private = m['p'];

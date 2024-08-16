@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 type PublicKey ed25519.PublicKey

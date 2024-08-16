@@ -1,13 +1,13 @@
-package safe
+package stash
 
 import (
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/sqlx"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/storage"
 )
 
 type Config struct {
@@ -16,7 +16,7 @@ type Config struct {
 	Signature   []byte
 }
 
-type Safe struct {
+type Stash struct {
 	Hnd       int
 	ID        string
 	URL       string
@@ -40,5 +40,5 @@ func init() {
 	}
 
 	// Construct the path to the database file
-	DefaultDBPath = filepath.Join(configDir, "mio", "mio.db")
+	DefaultDBPath = filepath.Join(configDir, "stash", "stash.db")
 }

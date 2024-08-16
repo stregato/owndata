@@ -3,21 +3,21 @@ package comm
 import (
 	"fmt"
 
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/stash"
 )
 
 type Comm struct {
-	S *safe.Safe
+	S *stash.Stash
 }
 
 var (
 	CommDir = "comm"
 )
 
-func Open(s *safe.Safe) *Comm {
+func Open(s *stash.Stash) *Comm {
 	return &Comm{S: s}
 }
 
@@ -30,7 +30,7 @@ func (c *Comm) Rewind(dest string, messageID MessageID) error {
 	return nil
 }
 
-func (c *Comm) getEncryptionKeys(sender security.ID, dest string) (keys []safe.Key, err error) {
+func (c *Comm) getEncryptionKeys(sender security.ID, dest string) (keys []stash.Key, err error) {
 	if len(dest) > 80 {
 		var id security.ID
 		if dest == c.S.Identity.Id.String() {
@@ -42,10 +42,10 @@ func (c *Comm) getEncryptionKeys(sender security.ID, dest string) (keys []safe.K
 			}
 		}
 		key, err := security.DiffieHellmanKey(c.S.Identity, id.String())
-		return []safe.Key{safe.Key(key)}, err
+		return []stash.Key{stash.Key(key)}, err
 	}
 
-	keys, err = c.S.GetKeys(safe.GroupName(dest), 0)
+	keys, err = c.S.GetKeys(stash.GroupName(dest), 0)
 	if err != nil {
 		return nil, err
 	}

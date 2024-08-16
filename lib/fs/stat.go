@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 func (f *FileSystem) Stat(name string) (File, error) {
@@ -24,7 +24,7 @@ func (f *FileSystem) Stat(name string) (File, error) {
 	}
 	file.Name = name
 	file.Dir = dir
-	file.Tags = core.NewSet(strings.Split(strings.TrimSpace(tags), " ")...)
+	file.Tags = strings.Split(strings.TrimSpace(tags), " ")
 	file.IsDir = file.ID == 0
 	return file, nil
 }

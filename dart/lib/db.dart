@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
-import 'package:mio/loader.dart';
+import 'package:stash/loader.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -27,19 +27,19 @@ class DB {
   }
 
   DB(String dbPath) {
-    var fun = mioLibrary!.lookupFunction<ArgsS, ArgsS>('mio_openDB');
+    var fun = stashLibrary!.lookupFunction<ArgsS, ArgsS>('stash_openDB');
     var res = fun(dbPath.toNativeUtf8());
     hnd = res.hnd;
   }
 
   static Future<DB> defaultDB() async {
     var configDir = await getConfigDir();
-    var dbPath = path.join(configDir, 'mio.db');
+    var dbPath = path.join(configDir, 'stash.db');
     return DB(dbPath);
   }
 
   void close() {
-    var fun = mioLibrary!.lookupFunction<ArgsI, Argsi>('mio_closeDB');
+    var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_closeDB');
     fun(hnd);
   }
 } 

@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/cli/styles"
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/cli/styles"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/stash"
 )
 
 func getSafeName(u string) string {
@@ -95,7 +95,7 @@ var userParam = assist.Param{
 }
 
 func matchExistingUser(c *assist.Command, arg string, params map[string]string) (string, error) {
-	s, err := safe.Open(DB, Identity, params["safe"])
+	s, err := stash.Open(DB, Identity, params["safe"])
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +105,7 @@ func matchExistingUser(c *assist.Command, arg string, params map[string]string) 
 	if err != nil {
 		return "", nil
 	}
-	users := groups[safe.UserGroup]
+	users := groups[stash.UserGroup]
 	err = survey.AskOne(&survey.Select{
 		Message: "Select an existing user",
 		Options: core.Apply(users.Slice(), func(u security.ID) (string, bool) {
@@ -121,7 +121,7 @@ func matchExistingUser(c *assist.Command, arg string, params map[string]string) 
 }
 
 func completeExistingUser(_ *assist.Command, arg string, params map[string]string) {
-	s, err := safe.Open(DB, Identity, params["safe"])
+	s, err := stash.Open(DB, Identity, params["safe"])
 	if err != nil {
 		return
 	}
@@ -131,7 +131,7 @@ func completeExistingUser(_ *assist.Command, arg string, params map[string]strin
 	if err != nil {
 		return
 	}
-	users := groups[safe.UserGroup]
+	users := groups[stash.UserGroup]
 	for _, u := range users.Slice() {
 		if strings.HasPrefix(string(u), arg) {
 			println(string(u))
@@ -146,7 +146,7 @@ var existingParam = assist.Param{
 	Complete: completeExistingUser,
 }
 
-func printGroups(groups safe.Groups) {
+func printGroups(groups stash.Groups) {
 	for n, g := range groups {
 		fmt.Print(styles.UseStyle.Render(string(n) + ": "))
 		for _, u := range g.Slice() {

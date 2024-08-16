@@ -148,10 +148,10 @@ typedef ArgsiSDS = CResult Function(
     int, Pointer<Utf8>, CData, Pointer<Utf8>);
 
 
-DynamicLibrary? mioLibrary;
+DynamicLibrary? stashLibrary;
 
-void loadMioLibrary() {
-  if (mioLibrary != null) {
+void loadstashLibrary() {
+  if (stashLibrary != null) {
     return;
   }
 
@@ -159,39 +159,39 @@ void loadMioLibrary() {
 
   switch (Platform.operatingSystem) {
     case 'linux':
-      libraryPaths.add('libmio.so');
-      libraryPaths.add('lib/libmio.so');
+      libraryPaths.add('libstash.so');
+      libraryPaths.add('lib/libstash.so');
       break;
     case 'android':
-      libraryPaths.add('libmio.so');
+      libraryPaths.add('libstash.so');
       break;
     case 'macos':
-      libraryPaths.add('libmiod.dylib');
+      libraryPaths.add('libstashd.dylib');
       break;
     case 'ios':
-      mioLibrary = DynamicLibrary.process();
-      freeC = mioLibrary!.lookupFunction<FreeC, FreeCDart>('free');
+      stashLibrary = DynamicLibrary.process();
+      freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
       return;
     case 'windows':
-      libraryPaths.add('miod.dll');
+      libraryPaths.add('stashd.dll');
       break;
     default:
       throw Exception('Unsupported platform');
   }
   for (String libraryPath in libraryPaths) {
     try {
-      mioLibrary = DynamicLibrary.open(libraryPath);
-      freeC = mioLibrary!.lookupFunction<FreeC, FreeCDart>('free');
+      stashLibrary = DynamicLibrary.open(libraryPath);
+      freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
       return;
     } catch (e) {
       // ignore
     }
   }
-  throw Exception('Failed to load Mio library');
+  throw Exception('Failed to load Stash library');
 }
 
 void setLogLevel(String level) {
-  var fun = mioLibrary!.lookupFunction<ArgsS, ArgsS>('mio_setLogLevel');
+  var fun = stashLibrary!.lookupFunction<ArgsS, ArgsS>('stash_setLogLevel');
   var r = fun(level.toNativeUtf8());
   r.check();
 }

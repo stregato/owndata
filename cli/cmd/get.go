@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/lib/fs"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/lib/fs"
 )
 
 func getRun(args map[string]string) error {

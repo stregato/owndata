@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 	"github.com/uhthomas/seekctr"
 
 	"github.com/zenazn/pkcs7pad"

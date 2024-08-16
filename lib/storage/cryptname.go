@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
 )
 
 type encrypted struct {

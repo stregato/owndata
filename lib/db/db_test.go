@@ -4,11 +4,11 @@ import (
 	_ "embed"
 	"testing"
 
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/security"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/stash"
 
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/sqlx"
 )
 
 //go:embed test.sql
@@ -16,13 +16,13 @@ var testDdl string
 
 func TestExec(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
 
-	groups, err := s.UpdateGroup(safe.UserGroup, safe.Grant, alice.Id)
+	groups, err := s.UpdateGroup(stash.UserGroup, stash.Grant, alice.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 	core.Assert(t, len(groups) == 2, "wrong number of groups: %d", len(groups))
 
-	db, err := Open(s, safe.UserGroup, DDLs{1.0: testDdl})
+	db, err := Open(s, stash.UserGroup, DDLs{1.0: testDdl})
 	core.TestErr(t, err, "cannot open db: %v")
 
 	_, err = db.Exec("INSERT_TEST_DATA", sqlx.Args{"msg": "hello world", "cnt": 1, "ratio": 0.5, "bin": []byte{1, 2, 3}})
@@ -31,8 +31,8 @@ func TestExec(t *testing.T) {
 	_, err = db.Sync()
 	core.TestErr(t, err, "cannot sync: %v")
 
-	db.Safe.DB.GetConnection().Exec("DELETE FROM db_test")
-	db.Safe.DB.GetConnection().Exec("DELETE FROM MIO_STORE_TX")
+	db.Stash.DB.GetConnection().Exec("DELETE FROM db_test")
+	db.Stash.DB.GetConnection().Exec("DELETE FROM MIO_STORE_TX")
 
 	rows, err := db.Query("SELECT_TEST_DATA", sqlx.Args{})
 	core.TestErr(t, err, "cannot select test data: %v")

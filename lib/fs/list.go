@@ -3,7 +3,7 @@ package fs
 import (
 	"time"
 
-	"github.com/stregato/mio/lib/core"
+	"github.com/stregato/stash/lib/core"
 )
 
 type ListOptions struct {

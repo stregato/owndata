@@ -1,4 +1,4 @@
-package safe
+package stash
 
 import (
 	"bytes"
@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
-	"github.com/stregato/mio/lib/config"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/security"
-	"github.com/stregato/mio/lib/storage"
+	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/security"
+	"github.com/stregato/stash/lib/storage"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -37,7 +37,7 @@ var keysCache = cache.New(time.Minute, time.Hour)
 
 // GetKeys returns the encryption keys for the given group. If the user is not authorized to access the keys, it returns a AuthErr.
 // The parameter expectedMinLength is used to check if the number of keys is at least the expected value. If it is 0, the check is skipped.
-func (s *Safe) GetKeys(groupName GroupName, expectedMinLength int) ([]Key, error) {
+func (s *Stash) GetKeys(groupName GroupName, expectedMinLength int) ([]Key, error) {
 	k, found := keysCache.Get(fmt.Sprintf("%s/%s", s.Store.ID(), groupName))
 	if found {
 		keys, ok := k.([]Key)
@@ -58,7 +58,7 @@ func (s *Safe) GetKeys(groupName GroupName, expectedMinLength int) ([]Key, error
 	return syncKeys(s, groupName, groups)
 }
 
-func syncKeys(s *Safe, groupName GroupName, groups Groups) ([]Key, error) {
+func syncKeys(s *Stash, groupName GroupName, groups Groups) ([]Key, error) {
 	var keys []Key
 	var err error
 	_keys, ok := keysCache.Get(path.Join(s.ID, groupName.String()))
@@ -100,7 +100,7 @@ func syncKeys(s *Safe, groupName GroupName, groups Groups) ([]Key, error) {
 	return keys, nil
 }
 
-func updateKeys(c *Safe, groupName GroupName, groups Groups, createNewDataKey bool) ([]Key, error) {
+func updateKeys(c *Stash, groupName GroupName, groups Groups, createNewDataKey bool) ([]Key, error) {
 
 	lock, err := storage.Lock(c.Store, KeysDir, "keys", time.Minute)
 	if err != nil {
@@ -130,13 +130,13 @@ func updateKeys(c *Safe, groupName GroupName, groups Groups, createNewDataKey bo
 	return keys, nil
 }
 
-func writeKeysToDb(c *Safe, groupName GroupName, keys []Key) error {
+func writeKeysToDb(c *Stash, groupName GroupName, keys []Key) error {
 	k := path.Join(KeysDir, string(groupName))
 	return config.SetConfigStruct(c.DB, config.KeystoreDomain, k, keys)
 }
 
 // readKeysFromDb reads keys from the sql. It returns sql.ErrNoRows if the keys are not found.
-func readKeysFromDb(c *Safe, groupName GroupName) ([]Key, error) {
+func readKeysFromDb(c *Stash, groupName GroupName) ([]Key, error) {
 	var keys []Key
 	k := path.Join(KeysDir, string(groupName))
 	err := config.GetConfigStruct(c.DB, config.KeystoreDomain, k, &keys)
@@ -144,7 +144,7 @@ func readKeysFromDb(c *Safe, groupName GroupName) ([]Key, error) {
 }
 
 // readKeystore reads the keystore from the store and verifies the signature. It returns ErrNotExist if the keystore is not found.
-func readKeystore(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
+func readKeystore(c *Stash, groupName GroupName, groups Groups) ([]Key, error) {
 	var keystore Keystore
 	filename := path.Join(KeysDir, fmt.Sprintf("%s.ks", groupName))
 	err := storage.ReadMsgPack(c.Store, filename, &keystore) // read and parse the keystore
@@ -191,7 +191,7 @@ func readKeystore(c *Safe, groupName GroupName, groups Groups) ([]Key, error) {
 	return keys, nil
 }
 
-func writeKeystore(c *Safe, groupName GroupName, groups Groups, keys []Key) error {
+func writeKeystore(c *Stash, groupName GroupName, groups Groups, keys []Key) error {
 	adminGroup := groups[AdminGroup]
 	if !adminGroup.Contains(c.Identity.Id) {
 		return core.Errorf("AuthErr: user %s is not in the group %s", c.Identity.Id, AdminGroup)

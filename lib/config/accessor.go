@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/sqlx"
 	"github.com/vmihailenco/msgpack/v5"
 )
 

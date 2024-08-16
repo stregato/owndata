@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/stregato/mio/cli/assist"
+	"github.com/stregato/stash/cli/assist"
 )
 
 var aboutId = &assist.Command{

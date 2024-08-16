@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/stregato/mio/cli/assist"
-	"github.com/stregato/mio/lib/core"
-	"github.com/stregato/mio/lib/db"
-	"github.com/stregato/mio/lib/safe"
-	"github.com/stregato/mio/lib/sqlx"
+	"github.com/stregato/stash/cli/assist"
+	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/db"
+	"github.com/stregato/stash/lib/sqlx"
+	"github.com/stregato/stash/lib/stash"
 )
 
 var messageParam = assist.Param{
@@ -47,7 +47,7 @@ func sayRun(args map[string]string) error {
 		return err
 	}
 
-	p, err := db.Open(s, safe.UserGroup, nil)
+	p, err := db.Open(s, stash.UserGroup, nil)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,110 @@
+# This Makefile is for MacOS on M architecture. For other platforms, please modify the variables accordingly.
+# Default target
+all: darwin linux android windows cli py java dart
+
+# Define paths
+LIBRARY_PATH=./lib
+CLI_PATH=./cli
+BUILD_PATH=./build
+
+init:
+	@mkdir -p $(BUILD_PATH)
+
+
+# Target-specific variables and rules
+linux_amd64: init
+	export GOOS=linux
+	export GOARCH=amd64
+	export LIBRARY_NAME=libstash.so
+	export CLI_NAME=stash_linux_amd64
+	export BUILD_MODE=-buildmode=c-shared
+	export CC=x86_64-linux-gnu-gcc
+	export CXX=x86_64-linux-gnu-g++
+	mkdir -p $(BUILD_PATH)/$(GOOS)_$(GOARCH)
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(GOOS)_$(GOARCH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/stash_linux_amd64 main.go
+
+linux_arm64: init
+	export GOOS=linux
+	export GOARCH=arm64
+	export LIBRARY_NAME=libstash_linux_arm64.so
+	export CLI_NAME=stash_linux_arm64	
+	export BUILD_MODE=-buildmode=c-shared
+	export CC=aarch64-linux-gnu-gcc
+	export CXX=aarch64-linux-gnu-g++
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(GOOS)_$(GOARCH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(GOOS)_$(GOARCH)/stash_linux_arm64 main.go
+
+linux: linux_amd64 linux_arm64
+
+web: export GOOS=js
+web: export GOARCH=wasm
+web: export LIBRARY_NAME=stash.wasm
+web: export BUILD_MODE=
+web: build_targets
+
+android: init
+	export NDK_PATH=$(shell ls -d $(HOME)/Library/Android/sdk/ndk/* | sort -V | tail -n 1)
+	export GOOS=android
+	export GOARCH=arm64
+	export CGO_CFLAGS="-Wno-unused-command-line-argument"
+	export CC=$(NDK_PATH)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang
+	export CGO_CFLAGS=-I$(NDK_PATH)/sysroot/usr/include
+	export CGO_LDFLAGS=-L$(NDK_PATH)/sysroot/usr/lib
+	export LIBRARY_NAME=libstash_android.so
+	export CLI_NAME=stash_android_arm64
+	export BUILD_MODE=-buildmode=c-shared
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(GOOS)_$(GOARCH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(GOOS)_$(GOARCH)/$(CLI_NAME) main.go
+
+darwin_arm64: 
+	export GOOS=darwin
+	export GOARCH=arm64
+	export LIBRARY_NAME=libstash_darwin_arm64.dylib
+	export CLI_NAME=stash_darwin_arm64
+	export BUILD_MODE=-buildmode=c-shared
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(CLI_NAME) main.go
+
+darwin_amd64: 
+	export GOOS=darwin
+	export GOARCH=amd64
+	export LIBRARY_NAME=libstash_darwin_amd64.dylib
+	export CLI_NAME=stash_darwin_arm64
+	export BUILD_MODE=-buildmode=c-shared
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(CLI_NAME) main.go
+
+darwin: darwin_arm64 darwin_amd64
+
+win: 
+	export GOOS=windows
+	export GOARCH=amd64
+	export LIBRARY_NAME=stash_win.dll
+	export CLI_NAME=stash_win.exe
+	export BUILD_MODE=-buildmode=c-shared
+	export CC=x86_64-w64-mingw32-gcc
+	cd $(LIBRARY_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(LIBRARY_NAME) $(BUILD_MODE) export.go main.go
+	cd $(CLI_PATH) && CGO_ENABLED=1 go build -o ../$(BUILD_PATH)/$(CLI_NAME) main.go
+
+py:
+	@mkdir -p ./py/lib
+	cp $(BUILD_PATH)/$(LIBRARY_NAME) ./py/lib
+	cd py && python setup.py build_ext --inplace
+
+java:
+	@mkdir -p ./java/lib
+	cp $(BUILD_PATH)/$(LIBRARY_NAME) ./java/lib
+
+dart:
+	@mkdir -p ./dart/lib
+	cp $(BUILD_PATH)/$(LIBRARY_NAME) ./dart/lib
+
+# Target for cleaning up the build artifacts
+clean:
+	@rm -rf $(BUILD_PATH)
+
+
+.PHONY: all lib cli py java dart clean linux linux_amd64 linux_arm64 android darwin darwin_amd64 darwin_arm64 windows
+
+

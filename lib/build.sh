@@ -1,0 +1,1 @@
+CGO_ENABLED=1 gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 windows/amd64" -output="bin/{{if eq .OS \"windows\"}}{{else}}lib{{end}}mylibrary_{{.OS}}_{{.Arch}}{{if eq .OS \"windows\"}}.dll{{else if eq .OS \"darwin\"}}.dylib{{else}}.so{{end}}" ./export.go

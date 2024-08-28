@@ -1,6 +1,8 @@
 package stash
 
 import (
+	"fmt"
+
 	"github.com/stregato/stash/lib/core"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/storage"
@@ -43,6 +45,6 @@ func hashOfConfig(config Config) []byte {
 		panic(err)
 	}
 	h.Write([]byte(config.Description))
-	h.Write([]byte(config.Signature))
+	h.Write([]byte(fmt.Sprintf("%d", config.Quota)))
 	return h.Sum(nil)
 }

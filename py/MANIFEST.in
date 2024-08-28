@@ -1,0 +1,6 @@
+
+include README.md
+include stash/_libs/linux_amd64/libstash.so
+include stash/_libs/darwin_amd64/libstash.dylib
+include stash/_libs/darwin_arm64/libstash.dylib
+include stash/_libs/windows/stash.dll

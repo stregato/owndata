@@ -62,10 +62,10 @@ func Open(db *sqlx.DB, identity *security.Identity, url string) (*Stash, error) 
 	}
 
 	config, err := s.ReadConfig()
-	if err == nil {
-		s.Config = config
+	if err != nil {
+		return nil, err
 	}
-
+	s.Config = config
 	return s, nil
 }
 

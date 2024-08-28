@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: mio
-Version: 0.1.0
-Summary: Python wrapper for mio
-Author: Francesco Garelli
-Platform: Linux
-Platform: Mac OS-X
-Platform: Windows

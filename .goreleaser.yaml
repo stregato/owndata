@@ -1,0 +1,31 @@
+version: 2
+
+project_name: stash
+
+builds:
+  - id: stash_build
+    main: ./cli/stash
+    goos:
+      - linux
+      - darwin
+      - windows
+      - android
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    ldflags: "-X main.version={{.Version}}"
+
+archives:
+  - format: zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - "stash"
+      - "libstash*.so"
+      - "libstash*.dylib"
+      - "stash*.dll"
+      - "stash*.wasm"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"

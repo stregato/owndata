@@ -7,6 +7,10 @@
 **/*.lst
 **/*.obj
 **/*.dump
+**/*egg-info
 
 target/
 build/
+dist/
+libs/
+__pycache__/

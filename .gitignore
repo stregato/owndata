@@ -8,9 +8,12 @@
 **/*.obj
 **/*.dump
 **/*egg-info
+**/.DS_Store
 
 target/
 build/
 dist/
 libs/
+pyenv/
 __pycache__/
+.venv/

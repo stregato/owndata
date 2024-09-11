@@ -8,7 +8,7 @@ public class TestStash {
 
     @Test
     public void testStash() throws Exception {
-        StashConfig.libDir =  "./lib";
+       // StashConfig.libDir =  "./lib";
         StashLibrary.instance.stash_setLogLevel("info");
 
         Identity i = new Identity("Alice");
@@ -22,7 +22,7 @@ public class TestStash {
 
     @Test
     public void testFS() throws Exception {
-        StashConfig.libDir =  "./lib";
+      //  StashConfig.libDir =  "./lib";
         StashLibrary.instance.stash_setLogLevel("info");
 
         Identity i = new Identity("Alice");

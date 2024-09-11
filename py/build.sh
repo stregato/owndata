@@ -3,7 +3,7 @@
 # Directory containing architecture-specific subdirectories (sibling of stash)
 LIB_SOURCE_DIR="../build"
 # Directory where the libraries should be copied to for packaging
-LIB_DEST_DIR="stash/_libs"
+LIB_DEST_DIR="pstash/_libs"
 
 # Check if the source directory exists
 if [ ! -d "$LIB_SOURCE_DIR" ]; then
@@ -49,7 +49,7 @@ for arch in $(ls -d ${LIB_SOURCE_DIR}/*/ | xargs -n 1 basename); do
   export ARCHFLAGS="-arch ${arch##*_}"
 
   # Call setup.py to build the package
-  python setup.py bdist_wheel --plat-name $platform_tag
+  python3 setup.py bdist_wheel --plat-name $platform_tag
 
   # Check if the build was successful
   if [ $? -ne 0 ]; then

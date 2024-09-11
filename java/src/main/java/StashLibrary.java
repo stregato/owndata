@@ -1,4 +1,5 @@
 import java.io.File;
+import java.net.URL;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -88,34 +89,54 @@ public interface StashLibrary extends Library {
     
     static StashLibrary loadLibrary() {
         String libName = "stash";
-        String libPath;
-
-//        Native.setProtected(true);
-
+        String libExtension = "";
+        String osFolder = "";
+        String arch = System.getProperty("os.arch");
+    
+        // Determine the platform-specific folder and library extension
         if (Platform.isWindows()) {
-            libPath = libName + ".dll";
+            osFolder = "windows_" + arch;
+            libExtension = ".dll";
         } else if (Platform.isMac()) {
-            libPath = "lib" + libName + ".dylib";
-        } else {
-            // Assume Linux or Unix-like
-            libPath = "lib" + libName + ".so";
+            osFolder = arch.contains("aarch") ? "darwin_arm64" : "darwin_amd64";
+            libName = "lib" + libName; // Add "lib" prefix for Unix-like systems
+            libExtension = ".dylib";
+        } else if (Platform.isLinux()) {
+            osFolder = "linux_" + arch;
+            libName = "lib" + libName; // Add "lib" prefix for Unix-like systems
+            libExtension = ".so";
+        } else if (Platform.isAndroid()) {
+            osFolder = "android_arm64";
+            libName = "lib" + libName; // Add "lib" prefix for Unix-like systems
+            libExtension = ".so";
         }
-        if (!StashConfig.libDir.isEmpty()) {
-            libPath = StashConfig.libDir + "/" + libPath;
+    
+        // Construct the library name for JNA to load
+        String resourceLibName = libName + libExtension;
+    
+        StashLibrary libraryInstance = null;
+    
+        try {
+            // First attempt to load the library via JNA (without specifying full path)
+            libraryInstance = (StashLibrary) Native.load(libName, StashLibrary.class);
+        } catch (UnsatisfiedLinkError e) {
+            // Calculate fallback path relative to the location of the class
+            URL classLocation = StashLibrary.class.getProtectionDomain().getCodeSource().getLocation();
+            File classFile = new File(classLocation.getPath());
+            File classDir = classFile.isDirectory() ? classFile : classFile.getParentFile();
+    
+            // Now calculate the path to the build directory relative to the class location
+            File buildDir = new File(classDir, "../../../build/" + osFolder + "/" + resourceLibName);
+            if (buildDir.exists()) {
+                // Load the library using the full path
+                libraryInstance = (StashLibrary) Native.load(buildDir.getAbsolutePath(), StashLibrary.class);
+            } else {
+                throw new RuntimeException("Failed to load native library from both JAR and ../build directory", e);
+            }
         }
-
-        StashLibrary i;
-        File libFile = new File(libPath);
-
-        if (libFile.exists()) {
-            i = (StashLibrary) Native.load(libFile.getAbsolutePath(), StashLibrary.class);
-        } else {
-            // If the file does not exist, try loading by name
-            i = (StashLibrary) Native.load(libName, StashLibrary.class);
-        }
-
-        i = (StashLibrary) Native.synchronizedLibrary(i);
-        return i;
+    
+        // Synchronize the loaded library
+        return (StashLibrary) Native.synchronizedLibrary(libraryInstance);
     }
 
     public StashLibrary instance = StashLibrary.loadLibrary();

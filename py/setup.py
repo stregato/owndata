@@ -1,20 +1,15 @@
-from setuptools import setup, find_packages, Extension
-
-# Dummy extension to ensure the package is recognized as platform-specific
-dummy_extension = Extension(
-    'stash.dummy', sources=[]  # No source files, just to mark the package as platform-specific
-)
+from setuptools import setup, find_packages
 
 # Setup script
 setup(
-    name='pstash',  # Generic name, if you don't need architecture-specific names
-    version='0.1.1',
+    name='pstash',
+    version='0.1.3',
     packages=find_packages(),
+    python_requires='>=3.6, <4',
     include_package_data=True,
     package_data={
-        'stash': ['_libs/**/*'],  # Include all files under stash/_libs
+        'pstash': ['_libs/**/*'],  # Include all files under pstash/_libs
     },
-    ext_modules=[dummy_extension],
     author='Francesco Ink',
     author_email='me@francesco.ink',
     description='P Stash provides encrypted storage and data exchange for Python applications.',
@@ -23,6 +18,13 @@ setup(
     url='https://github.com/stregato/stash',
     classifiers=[
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',

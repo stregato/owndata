@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 
 import java.util.Date;
 import java.util.Map;
@@ -34,31 +35,31 @@ public class FS {
 
     static public class File {
         @JsonProperty
-        long id;
+        public long id;
         @JsonProperty
-        String dir;
+        public String dir;
         @JsonProperty
-        String name;
+        public String name;
         @JsonProperty
-        boolean isDir;
+        public boolean isDir;
         @JsonProperty
-        String groupName;
+        public String groupName;
         @JsonProperty
-        String creator;
+        public String creator;
         @JsonProperty
-        int size;
+        public int size;
         @JsonProperty
-        Date modTime;
+        public Date modTime;
         @JsonProperty
-        List<String> tags;
+        public List<String> tags;
         @JsonProperty
-        Map<String, Object> attributes;
+        public Map<String, Object> attributes;
         @JsonProperty
-        String localCopy;
+        public String localCopy;
         @JsonProperty
-        Date copyTime;
+        public Date copyTime;
         @JsonProperty
-        byte[] encryptionKey;
+        public byte[] encryptionKey;
     }
 
 

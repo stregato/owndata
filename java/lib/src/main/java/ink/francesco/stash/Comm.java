@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 

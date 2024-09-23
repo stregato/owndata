@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

@@ -1,4 +1,4 @@
-.PHONY: all init clean lib py java
+.PHONY: all init clean lib py java package
 
 BUILD_PATH=./build
 LIBRARY_PATH=./lib
@@ -59,3 +59,10 @@ clean:
 	echo "Cleaning up"
 	rm -rf $(BUILD_PATH)
 	rm -rf py/stash/_libs
+
+package:
+	echo "Packaging all directories in $(BUILD_PATH)"
+	@for dir in $(shell find $(BUILD_PATH) -mindepth 1 -maxdepth 1 -type d); do \
+		dirname=$$(basename $$dir); \
+		zip -r $(BUILD_PATH)/$$dirname.zip $$dir; \
+	done

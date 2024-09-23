@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;

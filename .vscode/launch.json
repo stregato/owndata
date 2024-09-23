@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TestLibrary",
+            "request": "launch",
+            "mainClass": "TestLibrary",
+            "projectName": "mio"
+        },
+        {
+            "type": "java",
             "name": "TestMio",
             "request": "launch",
             "mainClass": "TestMio",

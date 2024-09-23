@@ -4,6 +4,15 @@ import java.util.List;
 
 import org.junit.Test;
 
+import ink.francesco.stash.Comm;
+import ink.francesco.stash.DB;
+import ink.francesco.stash.Database;
+import ink.francesco.stash.FS;
+import ink.francesco.stash.Identity;
+import ink.francesco.stash.Stash;
+import ink.francesco.stash.StashConfig;
+import ink.francesco.stash.StashLibrary;
+
 public class TestStash {
 
     @Test

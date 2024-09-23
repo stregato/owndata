@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 
 import java.io.IOException;
 
@@ -6,7 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-class Identity {
+public class Identity {
 
     @JsonProperty("i")
     public String id;

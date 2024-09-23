@@ -1,3 +1,4 @@
+package ink.francesco.stash;
 
 import java.util.Set;
 import java.util.Map;

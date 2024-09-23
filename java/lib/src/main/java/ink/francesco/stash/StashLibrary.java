@@ -1,3 +1,5 @@
+package ink.francesco.stash;
+
 import java.io.File;
 import java.net.URL;
 
@@ -5,9 +7,7 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
-class StashConfig {
-    public static String libDir = "";
-}
+
 
 public interface StashLibrary extends Library {
 
@@ -126,7 +126,7 @@ public interface StashLibrary extends Library {
             File classDir = classFile.isDirectory() ? classFile : classFile.getParentFile();
     
             // Now calculate the path to the build directory relative to the class location
-            File buildDir = new File(classDir, "../../../build/" + osFolder + "/" + resourceLibName);
+            File buildDir = new File(classDir, "../../../../build/" + osFolder + "/" + resourceLibName);
             if (buildDir.exists()) {
                 // Load the library using the full path
                 libraryInstance = (StashLibrary) Native.load(buildDir.getAbsolutePath(), StashLibrary.class);

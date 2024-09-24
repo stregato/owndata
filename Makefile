@@ -7,7 +7,7 @@ CLI_PATH=./cli
 GO_FILES := $(wildcard $(LIBRARY_PATH)/*.go)
 CLI_GO_FILES := $(wildcard $(CLI_PATH)/*.go)
 
-all: lib py 
+all: lib py java dart
 
 init:
 	echo "Running init"
@@ -54,6 +54,10 @@ py: lib
 java: lib
 	echo "Building Java bindings"
 	cd ./java && mvn clean install
+
+dart: lib
+	echo "Building Dart bindings"
+	cd ./dart && ./build.sh
 
 clean:
 	echo "Cleaning up"

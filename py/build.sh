@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pip install -r requirements.txt
+
 # Directory containing architecture-specific subdirectories (sibling of stash)
 LIB_SOURCE_DIR="../build"
 # Directory where the libraries should be copied to for packaging

@@ -82,7 +82,7 @@ class Config:
     quota: int = 0
     signature: str = ""
     
-class Stash():
+class Safe():
     grant   = 0
     revoke  = 1
     curse   = 2
@@ -90,8 +90,8 @@ class Stash():
 
     @staticmethod
     def create(db: DB, creator: Identity, url: str, config: Config = Config()):
-        r = lib.stash_createStash(db.hnd, o8(creator), e8(url), o8(config))
-        s = Stash()
+        r = lib.stash_createSafe(db.hnd, o8(creator), e8(url), o8(config))
+        s = Safe()
         for k, v in consume(r).items():
             setattr(s, k, v)
         s.hnd = r.hnd
@@ -100,15 +100,15 @@ class Stash():
 
     @staticmethod
     def open(db: DB, identity: Identity, url: str):
-        r = lib.stash_openStash(db.hnd, o8(identity), e8(url))
-        s = Stash()
+        r = lib.stash_openSafe(db.hnd, o8(identity), e8(url))
+        s = Safe()
         for k, v in consume(r).items():
             setattr(s, k, v)
         s.hnd = r.hnd
         return s
 
     def close(self):
-        r = lib.stash_closeStash(self.hnd)
+        r = lib.stash_closeSafe(self.hnd)
         return consume(r)
     
     def update_group(self, groupName: str, change: int, users: Users):
@@ -300,8 +300,8 @@ def test():
     i = Identity("test")
     db = DB.default()
     url = "file:///tmp/poland/{}/test".format(i)
-    stash = Stash.create(db, i, url)
-    stash = Stash.open(db, i, url)
+    stash = Safe.create(db, i, url)
+    stash = Safe.open(db, i, url)
     fs = stash.fs()
     print(fs.list())
     fs.put_data("test", b"test")
@@ -311,4 +311,4 @@ def test():
 if __name__ == "__main__":
     test()
     
-__all__ = ["Identity", "DB", "Stash", "Config", "FS", "Comm", "set_stash_log_level"]
+__all__ = ["Identity", "DB", "Safe", "Config", "FS", "Comm", "set_stash_log_level"]

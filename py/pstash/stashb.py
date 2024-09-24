@@ -21,14 +21,14 @@ lib.stash_closeDB.restype = Result
 lib.stash_newIdentity.argtypes = [ctypes.c_char_p]
 lib.stash_newIdentity.restype = Result
 
-lib.stash_createStash.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
-lib.stash_createStash.restype = Result
+lib.stash_createSafe.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
+lib.stash_createSafe.restype = Result
 
-lib.stash_openStash.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
-lib.stash_openStash.restype = Result
+lib.stash_openSafe.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
+lib.stash_openSafe.restype = Result
 
-lib.stash_closeStash.argtypes = [ctypes.c_ulonglong]
-lib.stash_closeStash.restype = Result
+lib.stash_closeSafe.argtypes = [ctypes.c_ulonglong]
+lib.stash_closeSafe.restype = Result
 
 lib.stash_updateGroup.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_long, ctypes.c_char_p]
 lib.stash_updateGroup.restype = Result

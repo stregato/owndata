@@ -1,7 +1,8 @@
 import ink.francesco.stash.StashLibrary;
+import ink.francesco.stash.Safe.GroupChange;
 import ink.francesco.stash.Identity;
 import ink.francesco.stash.DB;
-import ink.francesco.stash.Stash;
+import ink.francesco.stash.Safe;
 
 public class TestLibrary {
     public static void main(String[] args) throws Exception {
@@ -20,7 +21,10 @@ public class TestLibrary {
         DB db = DB.defaultDB();
 
         String url = String.format("file:///tmp/%s/sample", alice.id);
-        Stash s = Stash.create(db, alice, url, new Stash.Config());
+        Safe s = Safe.create(db, alice, url, new Safe.Config());
+
+        s.updateGroup(Safe.usrGroup, GroupChange.Add , new String[]{bob.id});
+
         s.close();
 
     }

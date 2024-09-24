@@ -151,10 +151,14 @@ void loadstashLibrary() {
   }
 
   // Get the operating system and architecture to construct the folder name
-  final os = Platform.operatingSystem; // linux, macos, windows, android, ios
+  var os = Platform.operatingSystem; // linux, macos, windows, android, ios
   final arch = Platform.version.toLowerCase();
 
   String archFolder;
+
+  if (os == 'macos') {
+    os = 'darwin';
+  }
 
   if (arch.contains('amd64') || arch.contains('x64')) {
     archFolder = 'amd64';
@@ -181,8 +185,8 @@ void loadstashLibrary() {
     case 'android':
       libraryFileName = 'libstash.so';
       break;
-    case 'macos':
-      libraryFileName = 'libstashd.dylib';
+    case 'darwin':
+      libraryFileName = 'libstash.dylib';
       break;
     case 'windows':
       libraryFileName = 'stashd.dll';
@@ -192,9 +196,14 @@ void loadstashLibrary() {
   }
 
   // Try to load the library from the composed path
-  String libraryPath = '$osArchFolder/$libraryFileName';
+  String libraryPath = 'lib/assets/$osArchFolder/$libraryFileName';
+  File libraryFile = File(libraryPath).absolute;
+  if (libraryFile.existsSync() == false) {
+    throw Exception('Failed to find Stash library at $libraryPath');
+  }
+
   try {
-    stashLibrary = DynamicLibrary.open(libraryPath);
+    stashLibrary = DynamicLibrary.open(libraryFile.path);
     freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
   } catch (e) {
     throw Exception('Failed to load Stash library from $libraryPath: $e');

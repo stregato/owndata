@@ -1,16 +1,19 @@
-name: stash
+name: dstash
 description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+version: 0.0.1
+repository: https://github.com/stregato/stash
+
+data:
+  - assets/**
 
 environment:
   sdk: ^3.5.0
 
 # Add regular dependencies here.
 dependencies:
-  # path: ^1.8.0
+  path: ^1.8.0
   ffi: ^2.0.0
-  path_provider: ^2.1.4
+#  path_provider: ^2.1.4
 
 dev_dependencies:
   lints: ^4.0.0

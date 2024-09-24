@@ -9,6 +9,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/stregato/stash/cli/assist"
 	"github.com/stregato/stash/lib/config"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 )
 

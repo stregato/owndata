@@ -15,7 +15,7 @@ import (
 	"github.com/stregato/stash/lib/safe"
 )
 
-func getSafeByName(name string) (*safe.Stash, error) {
+func getSafeByName(name string) (*safe.Safe, error) {
 	safes, err := listSafes()
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func getSafeByName(name string) (*safe.Stash, error) {
 	return nil, core.Errorf("Safe %s not found", name)
 }
 
-func getSafeAndPath(name string) (*safe.Stash, string, error) {
+func getSafeAndPath(name string) (*safe.Safe, string, error) {
 	dir := ""
 	if firstSlash := strings.Index(name, "/"); firstSlash > 0 {
 		dir = name[firstSlash+1:]

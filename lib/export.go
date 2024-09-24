@@ -167,10 +167,10 @@ func stash_closeDB(dbH C.ulonglong) C.Result {
 	return cResult(nil, 0, nil)
 }
 
-// stash_createStash creates a new safe with the specified identity, URL and configuration. A safe is a secure storage for keys and files. The function returns a handle to the safe.
+// stash_createSafe creates a new safe with the specified identity, URL and configuration. A safe is a secure storage for keys and files. The function returns a handle to the safe.
 //
-//export stash_createStash
-func stash_createStash(dbH C.ulonglong, identity, url, config *C.char) C.Result {
+//export stash_createSafe
+func stash_createSafe(dbH C.ulonglong, identity, url, config *C.char) C.Result {
 	var identityG security.Identity
 	var configG safe.Config
 

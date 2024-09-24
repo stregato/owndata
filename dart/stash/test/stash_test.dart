@@ -1,4 +1,4 @@
-import 'package:stash/stash.dart';
+import 'package:dstash/dstash.dart';
 import 'package:test/test.dart';
 
 void main() {

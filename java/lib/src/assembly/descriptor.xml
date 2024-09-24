@@ -15,7 +15,7 @@
 
         <!-- Include native libraries for android_arm64 -->
         <fileSet>
-            <directory>${basedir}/../build/android_arm64</directory>
+            <directory>${basedir}/../../build/android_arm64</directory>
             <outputDirectory>META-INF/lib/android_arm64</outputDirectory>
             <includes>
                 <include>*.so</include>
@@ -24,7 +24,7 @@
 
         <!-- Include native libraries for darwin_amd64 -->
         <fileSet>
-            <directory>${basedir}/../build/darwin_amd64</directory>
+            <directory>${basedir}/../../build/darwin_amd64</directory>
             <outputDirectory>META-INF/lib/darwin_amd64</outputDirectory>
             <includes>
                 <include>*.dylib</include>
@@ -33,7 +33,7 @@
 
         <!-- Include native libraries for darwin_arm64 -->
         <fileSet>
-            <directory>${basedir}/../build/darwin_arm64</directory>
+            <directory>${basedir}/../../build/darwin_arm64</directory>
             <outputDirectory>META-INF/lib/darwin_arm64</outputDirectory>
             <includes>
                 <include>*.dylib</include>
@@ -42,7 +42,7 @@
 
         <!-- Include native libraries for linux_amd64 -->
         <fileSet>
-            <directory>${basedir}/../build/linux_amd64</directory>
+            <directory>${basedir}/../../build/linux_amd64</directory>
             <outputDirectory>META-INF/lib/linux_amd64</outputDirectory>
             <includes>
                 <include>*.so</include>
@@ -51,7 +51,7 @@
 
         <!-- Include native libraries for windows_amd64 -->
         <fileSet>
-            <directory>${basedir}/../build/windows_amd64</directory>
+            <directory>${basedir}/../../build/windows_amd64</directory>
             <outputDirectory>META-INF/lib/windows_amd64</outputDirectory>
             <includes>
                 <include>*.dll</include>

@@ -12,7 +12,6 @@ import (
 	"github.com/stregato/stash/lib/config"
 	"github.com/stregato/stash/lib/core"
 	"github.com/stregato/stash/lib/security"
-	"github.com/stregato/stash/lib/stash"
 )
 
 var askUrl = &survey.Input{
@@ -67,7 +66,7 @@ var addCmd = &assist.Command{
 	Run: func(args map[string]string) error {
 		url := args["url"]
 
-		s, err := stash.Open(DB, Identity, url)
+		s, err := safe.Open(DB, Identity, url)
 		if err != nil {
 			return err
 		}

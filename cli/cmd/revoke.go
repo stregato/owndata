@@ -4,7 +4,6 @@ import (
 	"github.com/stregato/stash/cli/assist"
 
 	"github.com/stregato/stash/lib/security"
-	"github.com/stregato/stash/lib/stash"
 )
 
 var revokeCmd = &assist.Command{
@@ -19,7 +18,7 @@ var revokeCmd = &assist.Command{
 			return err
 		}
 		defer s.Close()
-		groups, err := s.UpdateGroup(stash.UserGroup, stash.Revoke, userId)
+		groups, err := s.UpdateGroup(safe.UserGroup, safe.Revoke, userId)
 		if err != nil {
 			return err
 		}

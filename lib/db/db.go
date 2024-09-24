@@ -5,14 +5,14 @@ import (
 	_ "embed"
 
 	"github.com/stregato/stash/lib/core"
-	"github.com/stregato/stash/lib/stash"
+	"github.com/stregato/stash/lib/safe"
 )
 
 type Database struct {
-	*stash.Stash
+	*safe.Safe
 	log       []Update
 	tx        *sql.Tx
-	groupName stash.GroupName
+	groupName safe.GroupName
 }
 
 var (
@@ -21,7 +21,7 @@ var (
 
 type DDLs map[float32]string
 
-func Open(s *stash.Stash, groupName stash.GroupName, ddls DDLs) (Database, error) {
+func Open(s *safe.Safe, groupName safe.GroupName, ddls DDLs) (Database, error) {
 	for version, ddl := range ddls {
 		err := s.DB.Define(version, ddl)
 		if err != nil {

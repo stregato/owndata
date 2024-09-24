@@ -8,18 +8,18 @@ import (
 	"strings"
 
 	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 )
 
 type PutOptions struct {
-	ID         FileID          `json:"id"`         // the ID of the file, used to overwrite an existing file
-	Async      bool            `json:"async"`      // put the file asynchronously
-	DeleteSrc  bool            `json:"deleteSrc"`  // delete the source file after putting it
-	GroupName  stash.GroupName `json:"groupName"`  // the group name of the file. If empty, the group name is calculated from the directory
-	Tags       []string        `json:"tags"`       // the tags of the file
-	Attributes map[string]any  `json:"attributes"` // the attributes of the file
+	ID         FileID         `json:"id"`         // the ID of the file, used to overwrite an existing file
+	Async      bool           `json:"async"`      // put the file asynchronously
+	DeleteSrc  bool           `json:"deleteSrc"`  // delete the source file after putting it
+	GroupName  safe.GroupName `json:"groupName"`  // the group name of the file. If empty, the group name is calculated from the directory
+	Tags       []string       `json:"tags"`       // the tags of the file
+	Attributes map[string]any `json:"attributes"` // the attributes of the file
 }
 
 func (fs *FileSystem) PutData(dest string, src []byte, options PutOptions) (File, error) {
@@ -163,8 +163,8 @@ func (fs *FileSystem) putSync(file File, localPath string, data []byte, deleteSr
 	return nil
 }
 
-func (fs *FileSystem) calculateGroup(dir string) (stash.GroupName, error) {
-	var groupName stash.GroupName
+func (fs *FileSystem) calculateGroup(dir string) (safe.GroupName, error) {
+	var groupName safe.GroupName
 	for {
 		err := fs.S.DB.QueryRow(MIO_GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
 		if err != sqlx.ErrNoRows && err != nil {
@@ -174,7 +174,7 @@ func (fs *FileSystem) calculateGroup(dir string) (stash.GroupName, error) {
 			return groupName, nil
 		}
 		if dir == "" {
-			return stash.UserGroup, nil
+			return safe.UserGroup, nil
 		}
 		index := strings.LastIndex(dir, "/")
 		if index == -1 {
@@ -185,7 +185,7 @@ func (fs *FileSystem) calculateGroup(dir string) (stash.GroupName, error) {
 	}
 }
 
-func writeBody(s *stash.Stash, dest string, src io.ReadSeeker, key []byte) error {
+func writeBody(s *safe.Safe, dest string, src io.ReadSeeker, key []byte) error {
 	aesKey := key[:32]
 	aesIV := key[32:]
 	r, err := security.EncryptReader(src, aesKey, aesIV)

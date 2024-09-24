@@ -23,14 +23,14 @@ public interface StashLibrary extends Library {
     // stash_closeDB closes the database with the given handle
     Result stash_closeDB(long dbH);
 
-    // stash_createStash creates a new safe with the given identity, url and config
-    Result stash_createStash(long dbH, String identity, String url, String config);
+    // stash_createSafe creates a new safe with the given identity, url and config
+    Result stash_createSafe(long dbH, String identity, String url, String config);
 
-    // stash_openStash opens a safe with the given identity and url
-    Result stash_openStash(long dbH, String identity, String url);
+    // stash_openSafe opens a safe with the given identity and url
+    Result stash_openSafe(long dbH, String identity, String url);
 
     // stash_closeStash closes the safe with the given handle
-    Result stash_closeStash(long safeH);
+    Result stash_closeSafe(long safeH);
     
     // stash_createGroup creates a new group with the given name
     Result stash_updateGroup(long safeH, String groupName, long change, String users);

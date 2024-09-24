@@ -3,7 +3,7 @@ package fs
 import (
 	"path"
 
-	"github.com/stregato/stash/lib/stash"
+	"github.com/stregato/stash/lib/safe"
 )
 
 var (
@@ -12,11 +12,11 @@ var (
 	DataDir          = path.Join(FSDir, "data")
 	ConfigPath       = path.Join(FSDir, "config.conf")
 	ErrExists        = "ErrExist: filesystem already exists in %s"
-	DefaultGroupName = stash.GroupName("usr") // default group name
+	DefaultGroupName = safe.GroupName("usr") // default group name
 
 	MIO_GET_GROUP_NAME = "MIO_GET_GROUP_NAME" // query to get group name
 )
 
 type FileSystem struct {
-	S *stash.Stash
+	S *safe.Safe
 }

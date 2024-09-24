@@ -19,9 +19,9 @@ import (
 	"github.com/stregato/stash/lib/core"
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/fs"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 )
 
 func cResult(v any, hnd uint64, err error) C.Result {
@@ -68,7 +68,7 @@ func cInput(err error, i *C.char, v any) error {
 
 var (
 	dbs       core.Registry[*sqlx.DB]
-	safes     core.Registry[*stash.Stash]
+	safes     core.Registry[*safe.Safe]
 	fss       core.Registry[*fs.FileSystem]
 	databases core.Registry[*db.Database]
 	rows      core.Registry[*sqlx.Rows]
@@ -167,12 +167,12 @@ func stash_closeDB(dbH C.ulonglong) C.Result {
 	return cResult(nil, 0, nil)
 }
 
-// stash_createStash creates a new safe with the specified identity, URL and configuration. A safe is a secure storage for keys and files. The function returns a handle to the stash.
+// stash_createStash creates a new safe with the specified identity, URL and configuration. A safe is a secure storage for keys and files. The function returns a handle to the safe.
 //
 //export stash_createStash
 func stash_createStash(dbH C.ulonglong, identity, url, config *C.char) C.Result {
 	var identityG security.Identity
-	var configG stash.Config
+	var configG safe.Config
 
 	err := cInput(nil, identity, &identityG)
 	if err != nil {
@@ -189,7 +189,7 @@ func stash_createStash(dbH C.ulonglong, identity, url, config *C.char) C.Result 
 		return cResult(nil, 0, err)
 	}
 
-	s, err := stash.Create(d, &identityG, C.GoString(url), configG)
+	s, err := safe.Create(d, &identityG, C.GoString(url), configG)
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -197,10 +197,10 @@ func stash_createStash(dbH C.ulonglong, identity, url, config *C.char) C.Result 
 	return cResult(s, safes.Add(s), err)
 }
 
-// stash_openStash opens an existing safe with the specified identity and URL. The function returns a handle to the stash.
+// stash_openSafe opens an existing safe with the specified identity and URL. The function returns a handle to the safe.
 //
-//export stash_openStash
-func stash_openStash(dbH C.ulonglong, identity, url *C.char) C.Result {
+//export stash_openSafe
+func stash_openSafe(dbH C.ulonglong, identity, url *C.char) C.Result {
 	var identityG security.Identity
 
 	err := cInput(nil, identity, &identityG)
@@ -213,7 +213,7 @@ func stash_openStash(dbH C.ulonglong, identity, url *C.char) C.Result {
 		return cResult(nil, 0, err)
 	}
 
-	s, err := stash.Open(d, &identityG, C.GoString(url))
+	s, err := safe.Open(d, &identityG, C.GoString(url))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -221,10 +221,10 @@ func stash_openStash(dbH C.ulonglong, identity, url *C.char) C.Result {
 	return cResult(s, safes.Add(s), err)
 }
 
-// stash_closeStash closes the specified stash.
+// stash_closeSafe closes the specified safe.
 //
-//export stash_closeStash
-func stash_closeStash(safeH C.ulonglong) C.Result {
+//export stash_closeSafe
+func stash_closeSafe(safeH C.ulonglong) C.Result {
 	s, err := safes.Get(uint64(safeH))
 	if err != nil {
 		return cResult(nil, 0, err)
@@ -252,11 +252,11 @@ func stash_updateGroup(safeH C.ulonglong, groupName *C.char, change C.long, user
 		return cResult(nil, 0, err)
 	}
 
-	groups, err := s.UpdateGroup(stash.GroupName(C.GoString(groupName)), stash.Change(change), usersG...)
+	groups, err := s.UpdateGroup(safe.GroupName(C.GoString(groupName)), safe.Change(change), usersG...)
 	return cResult(groups, 0, err)
 }
 
-// stash_getGroups returns all the groups in the specified stash. It is a map of group names to a list of identity IDs.
+// stash_getGroups returns all the groups in the specified safe. It is a map of group names to a list of identity IDs.
 //
 //export stash_getGroups
 func stash_getGroups(safeH C.ulonglong) C.Result {
@@ -276,11 +276,11 @@ func stash_getKeys(safeH C.ulonglong, groupName *C.char, expectedMinimumLenght C
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
-	keys, err := s.GetKeys(stash.GroupName(C.GoString(groupName)), int(expectedMinimumLenght))
+	keys, err := s.GetKeys(safe.GroupName(C.GoString(groupName)), int(expectedMinimumLenght))
 	return cResult(keys, 0, err)
 }
 
-// stash_openFS opens a file system in the specified stash. The function returns a handle to the file system.
+// stash_openFS opens a file system in the specified safe. The function returns a handle to the file system.
 //
 //export stash_openFS
 func stash_openFS(safeH C.ulonglong) C.Result {
@@ -471,7 +471,7 @@ func stash_openDatabase(safeH C.ulonglong, groupName *C.char, ddls *C.char) C.Re
 		ddls2[float32(f)] = v
 	}
 
-	db, err := db.Open(s, stash.GroupName(C.GoString(groupName)), ddls2)
+	db, err := db.Open(s, safe.GroupName(C.GoString(groupName)), ddls2)
 	return cResult(db, databases.Add(&db), err)
 }
 
@@ -573,7 +573,7 @@ func stash_closeRows(rowsH C.ulonglong) C.Result {
 	return cResult(nil, 0, nil)
 }
 
-// stash_sync synchronizes the database with the stash. The function returns the number of updates.
+// stash_sync synchronizes the database with the safe. The function returns the number of updates.
 //
 //export stash_sync
 func stash_sync(dbH C.ulonglong) C.Result {
@@ -599,7 +599,7 @@ func stash_cancel(dbH C.ulonglong) C.Result {
 	return cResult(nil, 0, err)
 }
 
-// stash_openComm opens a point to point communication channel for the specified stash.
+// stash_openComm opens a point to point communication channel for the specified safe.
 //
 //export stash_openComm
 func stash_openComm(safeH C.ulonglong) C.Result {
@@ -659,7 +659,7 @@ func stash_broadcast(commH C.ulonglong, groupName *C.char, message *C.char) C.Re
 		return cResult(nil, 0, err)
 	}
 
-	err = c.Broadcast(stash.GroupName(C.GoString(groupName)), messageG)
+	err = c.Broadcast(safe.GroupName(C.GoString(groupName)), messageG)
 	return cResult(nil, 0, err)
 }
 

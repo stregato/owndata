@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
-	"github.com/stregato/stash/lib/stash"
 )
 
 func TestPutData(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
 
 	f, err := Open(s)
 	core.TestErr(t, err, "cannot open fs: %v")
@@ -37,7 +37,7 @@ func TestPutData(t *testing.T) {
 }
 func TestPutFile(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
 
 	f, err := Open(s)
 	core.TestErr(t, err, "cannot open fs: %v")
@@ -59,7 +59,7 @@ func TestPutFile(t *testing.T) {
 
 func TestAsyncPutData(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
 
 	f, err := Open(s)
 	core.TestErr(t, err, "cannot open fs: %v")

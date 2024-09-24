@@ -5,8 +5,8 @@ import (
 	"path"
 
 	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
-	"github.com/stregato/stash/lib/stash"
 	"github.com/stregato/stash/lib/storage"
 	"golang.org/x/crypto/blake2b"
 )
@@ -16,7 +16,7 @@ func (c *Comm) Send(userId security.ID, m Message) error {
 	return c.send(m)
 }
 
-func (c *Comm) Broadcast(groupName stash.GroupName, m Message) error {
+func (c *Comm) Broadcast(groupName safe.GroupName, m Message) error {
 	m.Recipient = groupName.String()
 	return c.send(m)
 }

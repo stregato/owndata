@@ -4,24 +4,24 @@ import (
 	"path"
 
 	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 	"github.com/stregato/stash/lib/storage"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-func (d *Database) processTransaction(dir, id string, keys []stash.Key) ([]Update, error) {
+func (d *Database) processTransaction(dir, id string, keys []safe.Key) ([]Update, error) {
 	var tx Transaction
 	var updates []Update
 
-	err := storage.ReadMsgPack(d.Stash.Store, path.Join(dir, id), &tx)
+	err := storage.ReadMsgPack(d.Safe.Store, path.Join(dir, id), &tx)
 	if err != nil {
 		return nil, err
 	}
 
 	if tx.KeyId >= len(keys) {
-		keys, err = d.Stash.GetKeys(tx.GroupName, tx.KeyId)
+		keys, err = d.Safe.GetKeys(tx.GroupName, tx.KeyId)
 		if err != nil {
 			return nil, err
 		}
@@ -45,12 +45,12 @@ func (d *Database) processTransaction(dir, id string, keys []stash.Key) ([]Updat
 		return nil, err
 	}
 
-	sqlTx, err := d.Stash.DB.GetConnection().Begin()
+	sqlTx, err := d.Safe.DB.GetConnection().Begin()
 	if err != nil {
 		return nil, err
 	}
 	for _, u := range updates {
-		_, err = d.Stash.DB.Exec(u.Key, u.Args)
+		_, err = d.Safe.DB.Exec(u.Key, u.Args)
 		if err != nil {
 			break
 		}
@@ -77,11 +77,11 @@ func (d *Database) Sync() ([]Update, error) {
 }
 
 func (d *Database) sync(force bool) ([]Update, error) {
-	if !force && !d.Stash.IsUpdated(DBDir) {
+	if !force && !d.Safe.IsUpdated(DBDir) {
 		return nil, nil
 	}
 
-	keys, err := d.Stash.GetKeys(d.groupName, 0)
+	keys, err := d.Safe.GetKeys(d.groupName, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (d *Database) sync(force bool) ([]Update, error) {
 
 	var ids []string
 	ignores := core.Set[string]{}
-	rows, err := d.Stash.DB.Query("MIO_GET_TX", sqlx.Args{"groupName": d.groupName.String(), "safeID": d.Stash.ID})
+	rows, err := d.Safe.DB.Query("MIO_GET_TX", sqlx.Args{"groupName": d.groupName.String(), "safeID": d.Safe.ID})
 	if err == nil {
 		for rows.Next() {
 			var kind, id string
@@ -111,7 +111,7 @@ func (d *Database) sync(force bool) ([]Update, error) {
 
 	groupName := d.groupName.String()
 	dir := path.Join(DBDir, groupName)
-	ls, err := d.Stash.Store.ReadDir(dir, storage.Filter{})
+	ls, err := d.Safe.Store.ReadDir(dir, storage.Filter{})
 	if err != nil {
 		return nil, err
 	}
@@ -132,22 +132,22 @@ func (d *Database) sync(force bool) ([]Update, error) {
 
 		u, err := d.processTransaction(dir, id, keys)
 		if err != nil {
-			d.Stash.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Stash.ID, "kind": "failed", "id": id})
+			d.Safe.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "failed", "id": id})
 		}
 		updates = append(updates, u...)
 		lastId = id
 	}
 
-	_, err = d.Stash.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Stash.ID, "kind": "last", "lastId": lastId})
+	_, err = d.Safe.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "last", "lastId": lastId})
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.Stash.DB.Exec("MIO_DEL_TX_KIND", sqlx.Args{"groupName": groupName, "safeID": d.Stash.ID, "kind": "skip"})
+	_, err = d.Safe.DB.Exec("MIO_DEL_TX_KIND", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "skip"})
 	if err != nil {
 		return nil, err
 	}
 
-	d.Stash.Touch(DBDir)
+	d.Safe.Touch(DBDir)
 
 	return updates, nil
 }

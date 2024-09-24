@@ -44,7 +44,7 @@ func setupDB() {
 		if err != nil {
 			panic(err)
 		}
-		*DBPath = filepath.Join(dir, "stash.db")
+		*DBPath = filepath.Join(dir, "safe.db")
 	} else {
 		println("Using database at ", *DBPath)
 	}

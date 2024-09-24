@@ -10,7 +10,6 @@ import (
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 )
 
 func clearLines(lines int) {
@@ -41,7 +40,7 @@ func listenRun(params map[string]string) error {
 	}
 	defer s.Close()
 
-	d, err := db.Open(s, stash.UserGroup, nil)
+	d, err := db.Open(s, safe.UserGroup, nil)
 	if err != nil {
 		return err
 	}

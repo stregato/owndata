@@ -6,7 +6,6 @@ import (
 	"github.com/stregato/stash/lib/core"
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 )
 
 var messageParam = assist.Param{
@@ -47,7 +46,7 @@ func sayRun(args map[string]string) error {
 		return err
 	}
 
-	p, err := db.Open(s, stash.UserGroup, nil)
+	p, err := db.Open(s, safe.UserGroup, nil)
 	if err != nil {
 		return err
 	}

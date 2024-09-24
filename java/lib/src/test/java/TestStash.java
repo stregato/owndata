@@ -9,7 +9,7 @@ import ink.francesco.stash.DB;
 import ink.francesco.stash.Database;
 import ink.francesco.stash.FS;
 import ink.francesco.stash.Identity;
-import ink.francesco.stash.Stash;
+import ink.francesco.stash.Safe;
 import ink.francesco.stash.StashConfig;
 import ink.francesco.stash.StashLibrary;
 
@@ -25,7 +25,7 @@ public class TestStash {
         DB db = DB.defaultDB();
 
         String url = String.format("file:///tmp/%s/sample", i.id);
-        Stash s = Stash.create(db, i, url, new Stash.Config());
+        Safe s = Safe.create(db, i, url, new Safe.Config());
         s.close();
     }
 
@@ -39,7 +39,7 @@ public class TestStash {
         DB db = DB.defaultDB();
 
         String url = String.format("file:///tmp/%s/sample", i.id);
-        Stash s = Stash.create(db, i, url, new Stash.Config());
+        Safe s = Safe.create(db, i, url, new Safe.Config());
         FS fs = s.openFS();
 
         FS.File file = fs.putData("hello", "hello".getBytes(), new FS.PutOptions());
@@ -75,8 +75,8 @@ public class TestStash {
         DB db = DB.defaultDB();
 
         String url = String.format("file:///tmp/%s/sample", i.id);
-        Stash s = Stash.create(db, i, url, new Stash.Config());
-        Database d = s.openDatabase(Stash.usrGroup, null);
+        Safe s = Safe.create(db, i, url, new Safe.Config());
+        Database d = s.openDatabase(Safe.usrGroup, null);
 
         d.exec("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)", null);
         d.exec("INSERT INTO test (name) VALUES ('hello')", null);
@@ -105,12 +105,12 @@ public class TestStash {
         DB db = DB.defaultDB();
 
         String url = String.format("file:///tmp/%s/sample", i.id);
-        Stash s = Stash.create(db, i, url, new Stash.Config());
+        Safe s = Safe.create(db, i, url, new Safe.Config());
         Comm c = s.openComm();
 
         var m = new Comm.Message();
         m.text = "hello";
-        c.broadcast(Stash.usrGroup, m);
+        c.broadcast(Safe.usrGroup, m);
 
         List<Comm.Message> messages = c.receive("");
         assert messages.size() == 1;

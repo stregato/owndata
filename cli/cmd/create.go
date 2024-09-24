@@ -10,7 +10,6 @@ import (
 	"github.com/stregato/stash/cli/assist"
 	"github.com/stregato/stash/lib/config"
 	"github.com/stregato/stash/lib/security"
-	"github.com/stregato/stash/lib/stash"
 )
 
 var tyInput = &survey.Select{
@@ -226,15 +225,15 @@ var createCmd = &assist.Command{
 		}
 
 		u.Path = path.Join(u.Path, Identity.Id.String(), args["name"])
-		s, err := stash.Create(DB, Identity, u.String(), stash.Config{})
+		s, err := safe.Create(DB, Identity, u.String(), safe.Config{})
 		if err != nil {
 			return err
 		}
-		_, err = s.UpdateGroup(stash.AdminGroup, stash.Grant, Identity.Id)
+		_, err = s.UpdateGroup(safe.AdminGroup, safe.Grant, Identity.Id)
 		if err != nil {
 			return err
 		}
-		groups, err := s.UpdateGroup(stash.UserGroup, stash.Grant, Identity.Id)
+		groups, err := s.UpdateGroup(safe.UserGroup, safe.Grant, Identity.Id)
 		if err != nil {
 			return err
 		}

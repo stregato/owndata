@@ -6,17 +6,17 @@ import (
 	"testing"
 
 	"github.com/stregato/stash/lib/core"
+	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
-	"github.com/stregato/stash/lib/stash"
 )
 
 func TestBroadcast(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
-	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
+	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
 
 	c := Open(s)
-	err := c.Broadcast(stash.UserGroup, Message{Text: "hello world"})
+	err := c.Broadcast(safe.UserGroup, Message{Text: "hello world"})
 	core.TestErr(t, err, "cannot broadcast to user group: %v")
 
 	ms, err := c.Receive("")
@@ -32,7 +32,7 @@ func TestBroadcast(t *testing.T) {
 	core.TestErr(t, err, "cannot write to temp file: %v")
 	file.Close()
 
-	err = c.Broadcast(stash.UserGroup, Message{File: file.Name()})
+	err = c.Broadcast(safe.UserGroup, Message{File: file.Name()})
 	core.TestErr(t, err, "cannot broadcast file to user group: %v")
 
 	file, err = os.CreateTemp("", "stash-test-recv.txt")
@@ -57,8 +57,8 @@ func TestBroadcast(t *testing.T) {
 func TestSend(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
 	bob := security.NewIdentityMust("bob")
-	s := stash.NewTestSafe(t, alice, "local", alice.Id, true)
-	_, err := s.UpdateGroup(stash.UserGroup, stash.Grant, bob.Id)
+	s := safe.NewTestSafe(t, alice, "local", alice.Id, true)
+	_, err := s.UpdateGroup(safe.UserGroup, safe.Grant, bob.Id)
 	core.TestErr(t, err, "cannot update group: %v")
 
 	c := Open(s)
@@ -70,7 +70,7 @@ func TestSend(t *testing.T) {
 
 	db := sqlx.NewTestDB(t, true)
 
-	s, err = stash.Open(db, bob, s.URL)
+	s, err = safe.Open(db, bob, s.URL)
 	core.TestErr(t, err, "cannot open safe %s", s.URL)
 
 	c = Open(s)

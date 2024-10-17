@@ -15,10 +15,10 @@ import (
 	"unsafe"
 
 	"github.com/sirupsen/logrus"
-	"github.com/stregato/stash/lib/comm"
 	"github.com/stregato/stash/lib/core"
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/fs"
+	"github.com/stregato/stash/lib/messanger"
 	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"
 	"github.com/stregato/stash/lib/sqlx"
@@ -67,12 +67,13 @@ func cInput(err error, i *C.char, v any) error {
 }
 
 var (
-	dbs       core.Registry[*sqlx.DB]
-	safes     core.Registry[*safe.Safe]
-	fss       core.Registry[*fs.FileSystem]
-	databases core.Registry[*db.Database]
-	rows      core.Registry[*sqlx.Rows]
-	comms     core.Registry[*comm.Comm]
+	dbs          core.Registry[*sqlx.DB]
+	safes        core.Registry[*safe.Safe]
+	fss          core.Registry[*fs.FileSystem]
+	dbs_         core.Registry[*db.DB]
+	transactions core.Registry[*db.Transaction]
+	rows         core.Registry[*sqlx.Rows]
+	messangers   core.Registry[*messanger.Messenger]
 )
 
 // stash_setLogLevel sets the log level for the stash library. Possible values are: trace, debug, info, warn, error, fatal, panic.
@@ -472,14 +473,14 @@ func stash_openDatabase(safeH C.ulonglong, groupName *C.char, ddls *C.char) C.Re
 	}
 
 	db, err := db.Open(s, safe.GroupName(C.GoString(groupName)), ddls2)
-	return cResult(db, databases.Add(&db), err)
+	return cResult(db, dbs_.Add(&db), err)
 }
 
 // stash_closeDatabase closes the specified database connection.
 //
 //export stash_closeDatabase
 func stash_closeDatabase(dbH C.ulonglong) C.Result {
-	d, err := databases.Get(uint64(dbH))
+	d, err := dbs_.Get(uint64(dbH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -487,15 +488,32 @@ func stash_closeDatabase(dbH C.ulonglong) C.Result {
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
-	databases.Remove(uint64(dbH))
+	dbs_.Remove(uint64(dbH))
 	return cResult(nil, 0, nil)
+}
+
+// stash_transaction starts a new transaction in the specified database. The function returns a handle to the transaction.
+//
+//export stash_transaction
+func stash_transaction(dbH C.ulonglong) C.Result {
+	d, err := dbs_.Get(uint64(dbH))
+	if err != nil {
+		return cResult(nil, 0, err)
+	}
+
+	tx, err := d.Transaction()
+	if err != nil {
+		return cResult(nil, 0, err)
+	}
+	id := transactions.Add(tx)
+	return cResult(nil, id, nil)
 }
 
 // stash_exec executes the specified SQL statement with the specified arguments in the database. The function returns the number of rows affected.
 //
 //export stash_exec
-func stash_exec(dbH C.ulonglong, query *C.char, args *C.char) C.Result {
-	d, err := databases.Get(uint64(dbH))
+func stash_exec(txH C.ulonglong, query *C.char, args *C.char) C.Result {
+	t, err := transactions.Get(uint64(txH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -506,7 +524,7 @@ func stash_exec(dbH C.ulonglong, query *C.char, args *C.char) C.Result {
 		return cResult(nil, 0, err)
 	}
 
-	res, err := d.Exec(C.GoString(query), argsG)
+	res, err := t.Exec(C.GoString(query), argsG)
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -518,8 +536,8 @@ func stash_exec(dbH C.ulonglong, query *C.char, args *C.char) C.Result {
 // stash_query executes the specified SQL query with the specified arguments in the database. The function returns a handle to the result set.
 //
 //export stash_query
-func stash_query(dbH C.ulonglong, key *C.char, args *C.char) C.Result {
-	d, err := databases.Get(uint64(dbH))
+func stash_query(sqH C.ulonglong, key *C.char, args *C.char) C.Result {
+	sq, err := dbs_.Get(uint64(sqH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -530,7 +548,7 @@ func stash_query(dbH C.ulonglong, key *C.char, args *C.char) C.Result {
 		return cResult(nil, 0, err)
 	}
 
-	rows_, err := d.Query(C.GoString(key), argsG)
+	rows_, err := sq.Query(C.GoString(key), argsG)
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -577,7 +595,7 @@ func stash_closeRows(rowsH C.ulonglong) C.Result {
 //
 //export stash_sync
 func stash_sync(dbH C.ulonglong) C.Result {
-	d, err := databases.Get(uint64(dbH))
+	d, err := dbs_.Get(uint64(dbH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -586,55 +604,96 @@ func stash_sync(dbH C.ulonglong) C.Result {
 	return cResult(updates, 0, err)
 }
 
-// stash_cancel cancels the current database operation
+// stash_commit commits the current database operation.
 //
-//export stash_cancel
-func stash_cancel(dbH C.ulonglong) C.Result {
-	d, err := databases.Get(uint64(dbH))
+//export stash_commit
+func stash_commit(txH C.ulonglong) C.Result {
+	t, err := transactions.Get(uint64(txH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	err = d.Cancel()
+	err = t.Commit()
+	transactions.Remove(uint64(txH))
 	return cResult(nil, 0, err)
 }
 
-// stash_openComm opens a point to point communication channel for the specified safe.
+// stash_rollback cancels the current database operation
 //
-//export stash_openComm
-func stash_openComm(safeH C.ulonglong) C.Result {
+//export stash_rollback
+func stash_rollback(txH C.ulonglong) C.Result {
+	t, err := transactions.Get(uint64(txH))
+	if err != nil {
+		return cResult(nil, 0, err)
+	}
+
+	err = t.Rollback()
+	transactions.Remove(uint64(txH))
+	return cResult(nil, 0, err)
+}
+
+// stash_getCounter returns the value of the specified counter in the database.
+//
+//export stash_getCounter
+func stash_getCounter(dbH C.ulonglong, table, key *C.char) C.Result {
+	d, err := dbs_.Get(uint64(dbH))
+	if err != nil {
+		return cResult(nil, 0, err)
+	}
+
+	counter, err := d.GetCounter(C.GoString(table), C.GoString(key))
+	return cResult(counter, 0, err)
+}
+
+// stash_incCounter increments the specified counter in the database. If the counter does not exist, it is created. The function returns the new value of the counter.
+//
+//export stash_incCounter
+func stash_incCounter(txH C.ulonglong, table *C.char, key *C.char, value C.int) C.Result {
+	t, err := transactions.Get(uint64(txH))
+	if err != nil {
+		return cResult(nil, 0, err)
+	}
+
+	err = t.IncCounter(C.GoString(table), C.GoString(key), int(value))
+	return cResult(nil, 0, err)
+}
+
+// stash_openMessanger opens a point to point communication channel for the specified safe.
+//
+//export stash_openMessanger
+func stash_openMessanger(safeH C.ulonglong) C.Result {
 	s, err := safes.Get(uint64(safeH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	c := comm.Open(s)
-	return cResult(c, comms.Add(c), nil)
+	c := messanger.Open(s)
+	return cResult(c, messangers.Add(c), nil)
 }
 
 // stash_rewind rewinds the communication channel to the specified message ID. When calling receive, only messages with a higher ID will be received.
 //
 //export stash_rewind
 func stash_rewind(commH C.ulonglong, dest *C.char, messageID C.ulonglong) C.Result {
-	c, err := comms.Get(uint64(commH))
+	c, err := messangers.Get(uint64(commH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	err = c.Rewind(C.GoString(dest), comm.MessageID(messageID))
+	err = c.Rewind(C.GoString(dest), messanger.MessageID(messageID))
 	return cResult(nil, 0, err)
 }
 
 // stash_send sends a message to the specified user.
 //
 //export stash_send
-func stash_send(commH C.ulonglong, userId *C.char, message *C.char) C.Result {
-	c, err := comms.Get(uint64(commH))
+func stash_send(messangerH C.ulonglong, userId *C.char, message *C.char) C.Result {
+	c, err := messangers.Get(uint64(messangerH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	var messageG comm.Message
+	var messageG messanger.Message
 	err = cInput(nil, message, &messageG)
 	if err != nil {
 		return cResult(nil, 0, err)
@@ -647,13 +706,13 @@ func stash_send(commH C.ulonglong, userId *C.char, message *C.char) C.Result {
 // stash_broadcast broadcasts a message to the specified group.
 //
 //export stash_broadcast
-func stash_broadcast(commH C.ulonglong, groupName *C.char, message *C.char) C.Result {
-	c, err := comms.Get(uint64(commH))
+func stash_broadcast(messangerH C.ulonglong, groupName *C.char, message *C.char) C.Result {
+	c, err := messangers.Get(uint64(messangerH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	var messageG comm.Message
+	var messageG messanger.Message
 	err = cInput(nil, message, &messageG)
 	if err != nil {
 		return cResult(nil, 0, err)
@@ -667,8 +726,8 @@ func stash_broadcast(commH C.ulonglong, groupName *C.char, message *C.char) C.Re
 // When filter is empty, all messages are received.
 //
 //export stash_receive
-func stash_receive(commH C.ulonglong, filter *C.char) C.Result {
-	c, err := comms.Get(uint64(commH))
+func stash_receive(messangerH C.ulonglong, filter *C.char) C.Result {
+	c, err := messangers.Get(uint64(messangerH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
@@ -680,13 +739,13 @@ func stash_receive(commH C.ulonglong, filter *C.char) C.Result {
 // stash_download downloads a file attached to a message to the specified destination in the local filesystem.
 //
 //export stash_download
-func stash_download(commH C.ulonglong, message *C.char, dest *C.char) C.Result {
-	c, err := comms.Get(uint64(commH))
+func stash_download(messangerH C.ulonglong, message *C.char, dest *C.char) C.Result {
+	c, err := messangers.Get(uint64(messangerH))
 	if err != nil {
 		return cResult(nil, 0, err)
 	}
 
-	var messageG comm.Message
+	var messageG messanger.Message
 	err = cInput(nil, message, &messageG)
 	if err != nil {
 		return cResult(nil, 0, err)

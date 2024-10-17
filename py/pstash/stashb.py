@@ -90,14 +90,22 @@ lib.stash_closeRows.restype = Result
 lib.stash_sync.argtypes = [ctypes.c_ulonglong]
 lib.stash_sync.restype = Result
 
-lib.stash_rewind.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_ulonglong]
-lib.stash_rewind.restype = Result
+lib.stash_transaction.argtypes = [ctypes.c_ulonglong]
+lib.stash_transaction.restype = Result
 
-lib.stash_cancel.argtypes = [ctypes.c_ulonglong]
-lib.stash_cancel.restype = Result
+lib.stash_commit.argtypes = [ctypes.c_ulonglong]
+lib.stash_commit.restype = Result
 
-lib.stash_openComm.argtypes = [ctypes.c_ulonglong]
-lib.stash_openComm.restype = Result
+lib.stash_rollback.argtypes = [ctypes.c_ulonglong]
+lib.stash_rollback.restype = Result
+
+lib.stash_incCounter.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_long]
+lib.stash_incCounter.restype = Result
+
+
+
+lib.stash_openMessanger.argtypes = [ctypes.c_ulonglong]
+lib.stash_openMessanger.restype = Result
 
 lib.stash_send.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
 lib.stash_send.restype = Result
@@ -110,6 +118,9 @@ lib.stash_receive.restype = Result
 
 lib.stash_download.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p]
 lib.stash_download.restype = Result
+
+lib.stash_rewind.argtypes = [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_ulonglong]
+lib.stash_rewind.restype = Result
 
 def consume(r):
     try:

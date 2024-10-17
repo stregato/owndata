@@ -2,6 +2,7 @@
 
 Stash is a library for encrypted data storage and exchange. Similar to traditional storage, Stash offers controlled access with a security model inspired by Unix permissions.
 Unlike traditional storage, the access is based on cryptographic features, enabling distributed control.
+Stash follows the principle of Encrypt Remote where data stored on local devices is not necessarily protected while data on remote devices, especially cloud, must be protected by encryption.
 
 The library is written in Go and is available on Windows, Linux, MacOS, Android and iOS.
 Bindings are available for Python, Java and Dart.
@@ -28,6 +29,9 @@ c = s.comm()
 c.broadcast('usr', text='hello')
 ```
 
+The library supports various data paradigms, including messaging, distributed SQL, and file storage.
+
+Details about the design and implementation are available in the [manual](./MANUAL.md)
 
 # Installation
 The library is implemented in Go and is available as a binary distribution for Windows, Linux, macOS, iOS, and Android at https://github.com/stregato/stash/releases.
@@ -38,6 +42,12 @@ Python bindings can be installed using:
 ```sh
 pip install pstack
 ```
+
+Dart binding can be installed using:
+```sh
+dart get dstack
+```
+
 
 # Build
 In case the available binaries do no work on your system, you can build the library from the source code usind the available Makefile.

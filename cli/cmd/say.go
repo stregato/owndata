@@ -4,6 +4,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/stregato/stash/cli/assist"
 	"github.com/stregato/stash/lib/core"
+
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/sqlx"
@@ -26,8 +27,12 @@ var messageParam = assist.Param{
 	},
 }
 
-func writeMessage(p db.Database, message string) error {
-	_, err := p.Exec("INSERT_MESSAGE", sqlx.Args{"message": message,
+func writeMessage(sq db.DB, message string) error {
+	t, err := sq.Transaction()
+	if err != nil {
+		return err
+	}
+	_, err = t.Exec("INSERT_MESSAGE", sqlx.Args{"message": message,
 		"createdAt":   core.Now(),
 		"creatorId":   Identity.Id,
 		"contentType": "text/plain",
@@ -35,7 +40,7 @@ func writeMessage(p db.Database, message string) error {
 	if err != nil {
 		return err
 	}
-	_, err = p.Sync()
+	_, err = sq.Sync()
 	return err
 }
 

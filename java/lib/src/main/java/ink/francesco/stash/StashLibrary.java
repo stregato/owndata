@@ -63,8 +63,6 @@ public interface StashLibrary extends Library {
 
     Result stash_closeDatabase(long dbH);
 
-    Result stash_exec(long dbH, String query, String args);
-
     Result stash_query(long dbH, String key, String args);
 
     Result stash_nextRow(long rowsH);
@@ -73,9 +71,15 @@ public interface StashLibrary extends Library {
 
     Result stash_sync(long dbH);
 
-    Result stash_cancel(long dbH);
+    Result stash_transaction(long dbH);
 
-    Result stash_openComm(long safeH);
+    Result stash_exec(long dbH, String query, String args);
+
+    Result stash_commit(long txH);
+
+    Result stash_rollback(long txH);
+
+    Result stash_openMessanger(long safeH);
 
     Result stash_rewind(long commH, String dest, long messageID);
 

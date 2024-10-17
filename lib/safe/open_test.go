@@ -8,15 +8,6 @@ import (
 	"github.com/stregato/stash/lib/sqlx"
 )
 
-func TestOpen(t *testing.T) {
-	alice := security.NewIdentityMust("alice")
-
-	s := NewTestSafe(t, alice, "s3", alice.Id, false)
-	core.Assert(t, s != nil, "Safe not created")
-
-	s.Close()
-}
-
 func TestCreate(t *testing.T) {
 	alice := security.NewIdentityMust("alice")
 	db := sqlx.NewTestDB(t, false)

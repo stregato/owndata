@@ -42,7 +42,7 @@ func (f *FileSystem) GetFile(src, dest string, options GetOptions) (File, error)
 	}
 
 	if options.Async {
-		_, err = f.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
+		_, err = f.S.DB.Exec("STASH_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
 			"operation": "get", "file": file, "data": nil, "localCopy": dest, "deleteSrc": false})
 		if err != nil {
 			return File{}, err
@@ -85,7 +85,7 @@ func (f *FileSystem) getSync(file File, localPath string, dest io.Writer) error 
 	}
 
 	if localPath != "" {
-		f.S.DB.Exec("MIO_UPDATE_LOCALPATH", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
+		f.S.DB.Exec("STASH_UPDATE_LOCALPATH", sqlx.Args{"id": file.ID, "safeID": f.S.ID,
 			"localCopy": localPath, "copyTime": core.Now()})
 	}
 

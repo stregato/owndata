@@ -23,13 +23,13 @@ func (fs *FileSystem) Delete(name string) error {
 		return err
 	}
 
-	_, err = fs.S.DB.Exec("MIO_DELETE_FILE", sqlx.Args{"safeID": fs.S.ID, "id": file.ID.Uint64()})
+	_, err = fs.S.DB.Exec("STASH_DELETE_FILE", sqlx.Args{"safeID": fs.S.ID, "id": file.ID.Uint64()})
 	if err != nil {
 		return err
 	}
 
 	dir := core.Dir(file.Dir)
-	_, err = fs.S.DB.Exec("MIO_DELETE_DIR", sqlx.Args{"safeID": fs.S.ID, "dir": dir})
+	_, err = fs.S.DB.Exec("STASH_DELETE_DIR", sqlx.Args{"safeID": fs.S.ID, "dir": dir})
 	if err != nil {
 		return err
 	}

@@ -91,9 +91,9 @@ public class Safe {
         return new Database(r.hnd);
     }
 
-    public Comm openComm() throws Exception {
-        Result r = StashLibrary.instance.stash_openComm(hnd);
+    public Messanger openMessanger() throws Exception {
+        Result r = StashLibrary.instance.stash_openMessanger(hnd);
         r.check();
-        return new Comm(r.hnd);
+        return new Messanger(r.hnd);
     }
 }

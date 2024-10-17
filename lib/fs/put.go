@@ -30,7 +30,7 @@ func (fs *FileSystem) PutData(dest string, src []byte, options PutOptions) (File
 
 	if options.Async {
 		core.Info("putting file %s asynchronously", dest)
-		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
+		_, err = fs.S.DB.Exec("STASH_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID, "safeID": fs.S.ID,
 			"operation": "put", "file": file, "data": src, "localCopy": "", "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
@@ -64,7 +64,7 @@ func (fs *FileSystem) PutFile(dest string, src string, options PutOptions) (File
 
 	if options.Async {
 		core.Info("putting file %s asynchronously", dest)
-		_, err = fs.S.DB.Exec("MIO_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
+		_, err = fs.S.DB.Exec("STASH_INSERT_FILE_ASYNC", sqlx.Args{"id": file.ID,
 			"operation": "put", "file": file, "data": nil, "localCopy": src, "deleteSrc": options.DeleteSrc})
 		if err != nil {
 			return File{}, err
@@ -166,7 +166,7 @@ func (fs *FileSystem) putSync(file File, localPath string, data []byte, deleteSr
 func (fs *FileSystem) calculateGroup(dir string) (safe.GroupName, error) {
 	var groupName safe.GroupName
 	for {
-		err := fs.S.DB.QueryRow(MIO_GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
+		err := fs.S.DB.QueryRow(STASH_GET_GROUP_NAME, sqlx.Args{"safeID": fs.S.ID, "dir": dir, "name": ""}, &groupName)
 		if err != sqlx.ErrNoRows && err != nil {
 			return "", err
 		}

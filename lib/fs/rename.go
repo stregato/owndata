@@ -34,7 +34,7 @@ func (fs *FileSystem) Rename(old, new string) (File, error) {
 		return File{}, err
 	}
 
-	_, err = fs.S.DB.Exec("MIO_RENAME_FILE", sqlx.Args{"safeID": fs.S.ID, "oldDir": oldDir, "oldName": oldName,
+	_, err = fs.S.DB.Exec("STASH_RENAME_FILE", sqlx.Args{"safeID": fs.S.ID, "oldDir": oldDir, "oldName": oldName,
 		"newDir": file.Dir, "newName": file.Name, "id": file.ID.Uint64()})
 	if err != nil {
 		return File{}, err

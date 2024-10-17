@@ -11,7 +11,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-func (d *Database) processTransaction(dir, id string, keys []safe.Key) ([]Update, error) {
+func (d *DB) processTransaction(dir, id string, keys []safe.Key) ([]Update, error) {
 	var tx Transaction
 	var updates []Update
 
@@ -68,16 +68,8 @@ func (d *Database) processTransaction(dir, id string, keys []safe.Key) ([]Update
 	return updates, nil
 }
 
-func (d *Database) Sync() ([]Update, error) {
-	err := d.commit()
-	if err != nil {
-		return nil, err
-	}
-	return d.sync(false)
-}
-
-func (d *Database) sync(force bool) ([]Update, error) {
-	if !force && !d.Safe.IsUpdated(DBDir) {
+func (d *DB) Sync() ([]Update, error) {
+	if !d.Safe.IsUpdated(DBDir) {
 		return nil, nil
 	}
 
@@ -91,7 +83,7 @@ func (d *Database) sync(force bool) ([]Update, error) {
 
 	var ids []string
 	ignores := core.Set[string]{}
-	rows, err := d.Safe.DB.Query("MIO_GET_TX", sqlx.Args{"groupName": d.groupName.String(), "safeID": d.Safe.ID})
+	rows, err := d.Safe.DB.Query("STASH_GET_TX", sqlx.Args{"groupName": d.groupName.String(), "safeID": d.Safe.ID})
 	if err == nil {
 		for rows.Next() {
 			var kind, id string
@@ -132,17 +124,17 @@ func (d *Database) sync(force bool) ([]Update, error) {
 
 		u, err := d.processTransaction(dir, id, keys)
 		if err != nil {
-			d.Safe.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "failed", "id": id})
+			d.Safe.DB.Exec("STASH_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "failed", "id": id})
 		}
 		updates = append(updates, u...)
 		lastId = id
 	}
 
-	_, err = d.Safe.DB.Exec("MIO_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "last", "lastId": lastId})
+	_, err = d.Safe.DB.Exec("STASH_STORE_TX", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "last", "lastId": lastId})
 	if err != nil {
 		return nil, err
 	}
-	_, err = d.Safe.DB.Exec("MIO_DEL_TX_KIND", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "skip"})
+	_, err = d.Safe.DB.Exec("STASH_DEL_TX_KIND", sqlx.Args{"groupName": groupName, "safeID": d.Safe.ID, "kind": "skip"})
 	if err != nil {
 		return nil, err
 	}

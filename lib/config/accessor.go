@@ -7,7 +7,7 @@ import (
 )
 
 func GetConfigValue(db *sqlx.DB, domain string, key string) (s string, i int64, v []byte, ok bool) {
-	err := db.QueryRow("MIO_GET_CONFIG", sqlx.Args{"node": domain, "key": key}, &s, &i, &v)
+	err := db.QueryRow("STASH_GET_CONFIG", sqlx.Args{"node": domain, "key": key}, &s, &i, &v)
 	switch err {
 	case sqlx.ErrNoRows:
 		ok = false
@@ -17,21 +17,21 @@ func GetConfigValue(db *sqlx.DB, domain string, key string) (s string, i int64, 
 		core.IsErr(err, "cannot get config for %s/%s: %v", domain, key)
 		ok = false
 	}
-	core.Trace("SQL: MIO_GET_CONFIG: %s/%s - ok=%t, %s, %d, %v", domain, key, ok, s, i, v)
+	core.Trace("SQL: STASH_GET_CONFIG: %s/%s - ok=%t, %s, %d, %v", domain, key, ok, s, i, v)
 	return s, i, v, ok
 }
 
 func SetConfigValue(db *sqlx.DB, domain string, key string, s string, i int64, v []byte) error {
-	_, err := db.Exec("MIO_SET_CONFIG", sqlx.Args{"node": domain, "key": key, "s": s, "i": i, "b": v})
+	_, err := db.Exec("STASH_SET_CONFIG", sqlx.Args{"node": domain, "key": key, "s": s, "i": i, "b": v})
 	if err != nil {
 		return core.Errorw(err, "cannot set config %s/%s with values %s, %d, %v: %v", domain, key, s, i, v)
 	}
-	core.Trace("SQL: MIO_SET_CONFIG: %s/%s - %s, %d, %v", domain, key, s, i, v)
+	core.Trace("SQL: STASH_SET_CONFIG: %s/%s - %s, %d, %v", domain, key, s, i, v)
 	return nil
 }
 
 func ListConfigKeys(db *sqlx.DB, domain string) ([]string, error) {
-	rows, err := db.Query("MIO_LIST_CONFIG", sqlx.Args{"node": domain})
+	rows, err := db.Query("STASH_LIST_CONFIG", sqlx.Args{"node": domain})
 	if err != nil && err != sqlx.ErrNoRows {
 		return nil, core.Errorw(err, "cannot list configs for %s: %v", domain, err)
 	}
@@ -65,7 +65,7 @@ func SetConfigStruct(db *sqlx.DB, domain string, key string, v interface{}) erro
 }
 
 func DelConfigNode(db *sqlx.DB, domain string) error {
-	_, err := db.Exec("MIO_DEL_CONFIG", sqlx.Args{"node": domain})
+	_, err := db.Exec("STASH_DEL_CONFIG", sqlx.Args{"node": domain})
 	if err != nil {
 		return core.Errorw(err, "cannot del configs %s", domain)
 	}

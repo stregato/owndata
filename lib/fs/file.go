@@ -146,7 +146,7 @@ func syncHeaders(s *safe.Safe, dir string) error {
 	var lastID string
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if r.Intn(10) == 0 {
-		err = s.DB.QueryRow("MIO_GET_LAST_ID", sqlx.Args{"safeID": s.ID}, &lastID)
+		err = s.DB.QueryRow("STASH_GET_LAST_ID", sqlx.Args{"safeID": s.ID}, &lastID)
 		if err != nil && err != sqlx.ErrNoRows {
 			return err
 		}
@@ -172,7 +172,7 @@ func syncHeaders(s *safe.Safe, dir string) error {
 	return nil
 }
 
-const MIO_STORE_FILE = "MIO_STORE_FILE"
+const STASH_STORE_FILE = "STASH_STORE_FILE"
 
 func writeFileToDB(s *safe.Safe, f File) error {
 	tags := fmt.Sprintf(" %s ", strings.Join(f.Tags, " "))
@@ -184,7 +184,7 @@ func writeFileToDB(s *safe.Safe, f File) error {
 		"creator": f.Creator, "groupName": f.GroupName, "tags": tags,
 		"encryptionKey": f.EncryptionKey, "modTime": f.ModTime, "size": f.Size,
 		"localCopy": f.LocalCopy, "copyTime": core.Now(), "attributes": f.Attributes}
-	_, err := s.DB.Exec(MIO_STORE_FILE, args)
+	_, err := s.DB.Exec(STASH_STORE_FILE, args)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func writeFileToDB(s *safe.Safe, f File) error {
 		var name string
 		dir, name = core.SplitPath(dir)
 		if name != "" {
-			res, err := s.DB.Exec("MIO_STORE_DIR", sqlx.Args{"safeID": s.ID, "dir": dir, "name": name})
+			res, err := s.DB.Exec("STASH_STORE_DIR", sqlx.Args{"safeID": s.ID, "dir": dir, "name": name})
 			if err != nil {
 				core.Errorf("failed to store dir %s/%s: %w", dir, name, err)
 			}
@@ -208,7 +208,7 @@ func writeFileToDB(s *safe.Safe, f File) error {
 	return err
 }
 
-const MIO_GET_FILES_BY_DIR = "MIO_GET_FILES_BY_DIR"
+const STASH_GET_FILES_BY_DIR = "STASH_GET_FILES_BY_DIR"
 
 func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suffix, tag string, orderBy string,
 	limit, offset int) ([]File, error) {
@@ -222,7 +222,7 @@ func searchFiles(s *safe.Safe, dir string, after, before time.Time, prefix, suff
 		args["#orderBy"] = ""
 	}
 
-	rows, err := s.DB.Query(MIO_GET_FILES_BY_DIR, args)
+	rows, err := s.DB.Query(STASH_GET_FILES_BY_DIR, args)
 	if err != nil {
 		return nil, err
 	}

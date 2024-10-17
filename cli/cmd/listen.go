@@ -7,6 +7,7 @@ import (
 
 	"github.com/stregato/stash/cli/assist"
 	"github.com/stregato/stash/cli/styles"
+
 	"github.com/stregato/stash/lib/db"
 	"github.com/stregato/stash/lib/safe"
 	"github.com/stregato/stash/lib/security"

@@ -13,7 +13,7 @@ var uploadLock sync.Mutex
 var activeUploads = make(map[*FileSystem]*time.Timer)
 
 func (fs *FileSystem) HasPutCompleted(id FileID) bool {
-	err := fs.S.DB.QueryRow("MIO_GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID})
+	err := fs.S.DB.QueryRow("STASH_GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID})
 	return err == sqlx.ErrNoRows
 }
 
@@ -32,7 +32,7 @@ func (fs *FileSystem) startUploadJob() {
 			}
 			uploadLock.Lock()
 
-			rows, err := fs.S.DB.Query("MIO_GET_FILES_ASYNC", sqlx.Args{"safeID": fs.S.ID})
+			rows, err := fs.S.DB.Query("STASH_GET_FILES_ASYNC", sqlx.Args{"safeID": fs.S.ID})
 			if err != nil {
 				core.Info("cannot get files async: %v", err)
 				continue
@@ -74,7 +74,7 @@ func (fs *FileSystem) startUploadJob() {
 				operation string
 			)
 			uploadLock.Lock()
-			err := fs.S.DB.QueryRow("MIO_GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID},
+			err := fs.S.DB.QueryRow("STASH_GET_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID},
 				&file, &data, &deleteSrc, &localCopy, &operation)
 			if err != nil {
 				core.Info("cannot get file async: %v", err)
@@ -94,7 +94,7 @@ func (fs *FileSystem) startUploadJob() {
 		}
 
 		for _, id := range cleanup {
-			_, err := fs.S.DB.Exec("MIO_DEL_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID})
+			_, err := fs.S.DB.Exec("STASH_DEL_FILE_ASYNC", sqlx.Args{"id": id, "safeID": fs.S.ID})
 			if err != nil {
 				core.Info("cannot delete file async: %v", err)
 				continue

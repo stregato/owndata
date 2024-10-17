@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import ink.francesco.stash.Comm;
+import ink.francesco.stash.Messanger;
 import ink.francesco.stash.DB;
 import ink.francesco.stash.Database;
 import ink.francesco.stash.FS;
@@ -12,6 +12,7 @@ import ink.francesco.stash.Identity;
 import ink.francesco.stash.Safe;
 import ink.francesco.stash.StashConfig;
 import ink.francesco.stash.StashLibrary;
+import ink.francesco.stash.Transaction;
 
 public class TestStash {
 
@@ -78,10 +79,12 @@ public class TestStash {
         Safe s = Safe.create(db, i, url, new Safe.Config());
         Database d = s.openDatabase(Safe.usrGroup, null);
 
-        d.exec("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)", null);
-        d.exec("INSERT INTO test (name) VALUES ('hello')", null);
+        Transaction t = d.transaction();
+        t.exec("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)", null);
+        t.exec("INSERT INTO test (name) VALUES ('hello')", null);
+        t.commit();
+        
         d.sync();
-
         Database.Rows rows = d.query("SELECT * FROM test", null);
         while (true) {
             try {
@@ -96,7 +99,7 @@ public class TestStash {
     }
 
     @Test
-    public void testComm() throws Exception {
+    public void testMessanger() throws Exception {
         StashConfig.libDir =  "./lib";
         StashLibrary.instance.stash_setLogLevel("info");
 
@@ -106,13 +109,13 @@ public class TestStash {
 
         String url = String.format("file:///tmp/%s/sample", i.id);
         Safe s = Safe.create(db, i, url, new Safe.Config());
-        Comm c = s.openComm();
+        Messanger c = s.openMessanger();
 
-        var m = new Comm.Message();
+        var m = new Messanger.Message();
         m.text = "hello";
         c.broadcast(Safe.usrGroup, m);
 
-        List<Comm.Message> messages = c.receive("");
+        List<Messanger.Message> messages = c.receive("");
         assert messages.size() == 1;
         assert messages.get(0).text.equals("hello");
 

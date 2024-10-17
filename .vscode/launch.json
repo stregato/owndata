@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TestStash",
+            "request": "launch",
+            "mainClass": "TestStash",
+            "projectName": "stash"
+        },
+        {
+            "type": "java",
             "name": "TestLibrary",
             "request": "launch",
             "mainClass": "TestLibrary",
@@ -13,13 +20,13 @@
         },
         {
             "type": "java",
-            "name": "TestMio",
+            "name": "JStash",
             "request": "launch",
             "mainClass": "TestMio",
             "projectName": "mio"
         },
         {
-            "name": "mio",
+            "name": "stash",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -29,6 +36,15 @@
                 "praha"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Run pstash",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pstash",
+            "cwd": "${workspaceFolder}/py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }

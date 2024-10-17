@@ -33,9 +33,10 @@ public class Database {
         StashLibrary.instance.stash_closeDatabase(hnd);
     }
 
-    public int exec(String sql, Map<String, Object> args) throws Exception { 
-        Result res = StashLibrary.instance.stash_exec(hnd, sql, mapper.writeValueAsString(args));
-        return res.obj(Integer.class);
+    public Transaction transaction() {
+        Result res = StashLibrary.instance.stash_transaction(hnd);
+        res.check();
+        return new Transaction(res.hnd);
     }
 
     public Rows query(String sql, Map<String, Object> args) throws Exception {
@@ -50,7 +51,7 @@ public class Database {
     }
 
     public void cancel() {
-        Result res = StashLibrary.instance.stash_cancel(hnd);
+        Result res = StashLibrary.instance.stash_rollback(hnd);
         res.check();
     }
 

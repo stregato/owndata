@@ -41,3 +41,10 @@ func (s *Safe) Touch(dirs ...string) error {
 	err = config.SetConfigValue(s.DB, config.GuardDomain, path.Join(s.ID, name), "", st.ModTime().UnixMilli(), nil)
 	return err
 }
+
+func (s *Safe) ResetTouch(dirs ...string) error {
+	name := path.Join(dirs...)
+	name = path.Join(name, ".touch")
+
+	return config.SetConfigValue(s.DB, config.GuardDomain, path.Join(s.ID, name), "", 0, nil)
+}

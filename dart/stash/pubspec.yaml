@@ -1,5 +1,5 @@
 name: dstash
-description: A starting point for Dart libraries or applications.
+description: Dart bindings for stash. Stash is a library for encrypted data storage and exchange. 
 version: 0.0.1
 repository: https://github.com/stregato/stash
 

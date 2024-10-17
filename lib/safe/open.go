@@ -76,10 +76,13 @@ func NewTestSafe(t *testing.T, identity *security.Identity, storeId string, crea
 	urls := storage.LoadTestURLs()
 
 	url := urls[storeId]
+	if url == "" {
+		t.Fatalf("unknown store id %s", storeId)
+	}
 	u, err := url_.Parse(url)
 	core.TestErr(t, err, "cannot parse url %s", url)
 	u.Path = path.Join(u.Path, string(creatorId)+"/test")
-	s, err := Open(db, identity, u.String())
+	s, err := Create(db, identity, u.String(), Config{})
 	core.TestErr(t, err, "cannot open safe %s", u.String())
 
 	_, err = s.UpdateGroup(AdminGroup, Grant, identity.Id)

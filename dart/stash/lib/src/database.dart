@@ -29,12 +29,11 @@ class Database {
     fun(hnd);
   }
 
-  int exec(String query, Map<String, dynamic> args) {
-    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_exec');
-    var s = jsonEncode(args);
-    return fun(hnd, query.toNativeUtf8(), s.toNativeUtf8()).integer;
+  Transaction transaction() {
+    var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_transaction');
+    return Transaction(fun(hnd).handle);
   }
-
+  
   Rows query(String query, Map<String, dynamic> args) {
     var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_query');
     var s = jsonEncode(args);
@@ -50,6 +49,28 @@ class Database {
     var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_cancel');
     fun(hnd).check();
   }
+}
+
+class Transaction {
+  int hnd;
+  Transaction(this.hnd);
+
+  int exec(String query, Map<String, dynamic> args) {
+    var fun = stashLibrary!.lookupFunction<ArgsISS, ArgsiSS>('stash_exec');
+    var s = jsonEncode(args);
+    return fun(hnd, query.toNativeUtf8(), s.toNativeUtf8()).integer;
+  }
+
+  void commit() {
+    var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_commit');
+    fun(hnd).check();
+  }
+
+  void rollback() {
+    var fun = stashLibrary!.lookupFunction<ArgsI, Argsi>('stash_rollback');
+    fun(hnd).check();
+  }
+
 }
 
 class Rows {

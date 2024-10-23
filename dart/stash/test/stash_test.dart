@@ -2,9 +2,9 @@ import 'package:dstash/dstash.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('A group of tests', () {
-    setUp(() {
-    loadstashLibrary();
+  group('A group of tests', ()  {
+    setUp(() async {
+    await loadStashLibrary();
     setLogLevel('debug');
     });
 

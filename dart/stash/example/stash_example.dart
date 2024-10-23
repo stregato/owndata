@@ -1,6 +1,8 @@
 import 'package:dstash/dstash.dart';
 
 void main() async {
+  loadStashLibrary();
+
   var alice = Identity('alice');
   var db = DB.defaultDB();
 

@@ -1,6 +1,6 @@
 name: dstash
 description: Dart bindings for stash. Stash is a library for encrypted data storage and exchange. 
-version: 0.0.1
+version: 0.0.5
 repository: https://github.com/stregato/stash
 
 data:
@@ -8,13 +8,23 @@ data:
 
 environment:
   sdk: ^3.5.0
+  flutter: ">=2.0.0"
 
 # Add regular dependencies here.
 dependencies:
   path: ^1.8.0
   ffi: ^2.0.0
-#  path_provider: ^2.1.4
+  flutter:
+    sdk: flutter
 
 dev_dependencies:
   lints: ^4.0.0
   test: ^1.24.0
+
+flutter:
+  assets:
+    - assets/android_arm64/libstash.so
+    - assets/darwin_amd64/libstash.dylib
+    - assets/darwin_arm64/libstash.dylib
+    - assets/linux_amd64/libstash.so
+    - assets/windows_amd64/stash.dll

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/services.dart';
 
 typedef FreeC = Void Function(Pointer<Uint8>);
 typedef FreeCDart = void Function(Pointer<Uint8>);
@@ -145,10 +145,49 @@ typedef ArgsiSDS = CResult Function(int, Pointer<Utf8>, CData, Pointer<Utf8>);
 
 DynamicLibrary? stashLibrary;
 
-void loadstashLibrary() {
+Future<void> loadStashLibrary() async {
   if (stashLibrary != null) {
     return;
   }
+
+
+  // Special handling for iOS since it doesn't use DynamicLibrary.open
+  if (Platform.isIOS) {
+    stashLibrary = DynamicLibrary.process();
+    freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
+    return;
+  }
+
+  var libraryPath = await _getLibraryPath();
+  if (libraryPath != null) {
+    // Load the dynamic library from the library path
+    stashLibrary = DynamicLibrary.open(libraryPath.path);
+    freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
+    return;
+  }
+  
+  throw Exception('Failed to find Stash library at $libraryPath');
+}
+
+Future<File?> _getLibraryPath() async {
+  String assetPath = _getAssetPath();
+
+  String libraryPath = 'lib/assets/$assetPath';
+  File libraryFile = File(libraryPath).absolute;
+  if (libraryFile.existsSync()) {
+    return libraryFile;  
+  }
+
+  final byteData = await rootBundle.load('packages/dstash/assets/$assetPath');
+  final tempDir = Directory.systemTemp;
+  final tempFile = File('${tempDir.path}/$assetPath');
+  tempFile.createSync(recursive: true);
+  tempFile.writeAsBytesSync(byteData.buffer.asUint8List());
+
+  return tempFile;
+}
+
+String _getAssetPath() {
 
   // Get the operating system and architecture to construct the folder name
   var os = Platform.operatingSystem; // linux, macos, windows, android, ios
@@ -166,13 +205,6 @@ void loadstashLibrary() {
     archFolder = 'arm64';
   } else {
     throw Exception('Unsupported architecture: $arch');
-  }
-
-  // Special handling for iOS since it doesn't use DynamicLibrary.open
-  if (Platform.isIOS) {
-    stashLibrary = DynamicLibrary.process();
-    freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
-    return;
   }
 
   // Compose the folder name using the operating system and architecture
@@ -194,62 +226,8 @@ void loadstashLibrary() {
     default:
       throw Exception('Unsupported platform: $os');
   }
-
-  // Try to load the library from the composed path
-  String libraryPath = 'lib/assets/$osArchFolder/$libraryFileName';
-  File libraryFile = File(libraryPath).absolute;
-  if (libraryFile.existsSync() == false) {
-    throw Exception('Failed to find Stash library at $libraryPath');
-  }
-
-  try {
-    stashLibrary = DynamicLibrary.open(libraryFile.path);
-    freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
-  } catch (e) {
-    throw Exception('Failed to load Stash library from $libraryPath: $e');
-  }
-
-  print('Successfully loaded Stash library from $libraryPath');
-}
-
-void loadstashLibrary2() {
-  if (stashLibrary != null) {
-    return;
-  }
-
-  List<String> libraryPaths = [];
-
-  switch (Platform.operatingSystem) {
-    case 'linux':
-      libraryPaths.add('libstash.so');
-      libraryPaths.add('lib/libstash.so');
-      break;
-    case 'android':
-      libraryPaths.add('libstash.so');
-      break;
-    case 'macos':
-      libraryPaths.add('libstashd.dylib');
-      break;
-    case 'ios':
-      stashLibrary = DynamicLibrary.process();
-      freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
-      return;
-    case 'windows':
-      libraryPaths.add('stashd.dll');
-      break;
-    default:
-      throw Exception('Unsupported platform');
-  }
-  for (String libraryPath in libraryPaths) {
-    try {
-      stashLibrary = DynamicLibrary.open(libraryPath);
-      freeC = stashLibrary!.lookupFunction<FreeC, FreeCDart>('free');
-      return;
-    } catch (e) {
-      // ignore
-    }
-  }
-  throw Exception('Failed to load Stash library');
+  
+  return '$osArchFolder/$libraryFileName';
 }
 
 void setLogLevel(String level) {
